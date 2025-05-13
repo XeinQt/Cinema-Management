@@ -9,7 +9,38 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-                    {{ __("Cinemas") }}
+                   
+
+                     <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="mallsTable">
+                        <thead class="bg-gray-100 text-gray-600 uppercase text-sm">
+                            <tr>
+                                <th class="py-3 px-6 text-left">CINEMA ID</th>
+                                <th class="py-3 px-6 text-left">MALL ID</th>
+                                <th class="py-3 px-6 text-left">MANAGER ID</th>
+                                <th class="py-3 px-6 text-left">NAME</th>
+                                <th class="py-3 px-6 text-left">ACTION</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            @foreach ($cinemas as $cinema)
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-3 px-6">{{ $cinema->cinema_id }}</td>
+                                <td class="py-3 px-6">{{ $cinema->mall_id }}</td>
+                                <td class="py-3 px-6">{{ $cinema->manager_id }}</td>
+                                <td class="py-3 px-6">{{ $cinema->name }}</td>
+
+                                <td class="py-3 px-6 flex gap-2">
+                                        <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-red-600 transition">Edit</button>
+                                        <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">Delete</button>
+                                    </td>
+
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+
+
                 </div>
             </div>
         </div>

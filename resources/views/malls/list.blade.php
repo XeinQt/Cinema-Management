@@ -13,11 +13,11 @@
                <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="mallsTable">
                     <thead class="bg-gray-100 text-gray-600 uppercase text-sm">
                         <tr>
-                            <th class="py-3 px-6 text-left">ID</th>
+                            <th class="py-3 px-6 text-left">MALL ID</th>
                             <th class="py-3 px-6 text-left">NAME</th>
                             <th class="py-3 px-6 text-left">LOCATION</th>
                             <th class="py-3 px-6 text-left">DESCRIPTION</th>
-                            <th class="py-3 px-6 text-left">Actions</th>
+                            <th class="py-3 px-6 text-left">ACTIONS</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-200">
