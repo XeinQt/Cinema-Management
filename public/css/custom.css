@@ -1,0 +1,4 @@
+/* Fix dropdown alignment in DataTables */
+select {
+    background-position: right -5px center;
+}
