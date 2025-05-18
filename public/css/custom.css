@@ -1,4 +1,8 @@
 /* Fix dropdown alignment in DataTables */
-select {
-    background-position: right -5px center;
+.dt-input {
+    width: 75px;
+}
+
+#dt-search-0 {
+    width: 200px;
 }

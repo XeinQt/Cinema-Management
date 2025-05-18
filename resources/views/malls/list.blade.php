@@ -11,31 +11,8 @@
                 <div class="p-6 text-gray-900 dark:text-gray-100">
 
                 <button class="bg-green-500 px-5 py-2 rounded-sm text-white">Add</button>
-               <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="mallsTable">
-                    <thead class="bg-gray-100 text-gray-600 uppercase text-sm">
-                        <tr>
-                            <th class="py-3 px-6 text-left">MALL ID</th>
-                            <th class="py-3 px-6 text-left">NAME</th>
-                            <th class="py-3 px-6 text-left">LOCATION</th>
-                            <th class="py-3 px-6 text-left">DESCRIPTION</th>
-                            <th class="py-3 px-6 text-left">ACTIONS</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-200">
-                        @foreach ($malls as $mall)
-                        <tr class="hover:bg-gray-50">
-                            <td class="py-3 px-6">{{ $mall->mall_id }}</td>
-                            <td class="py-3 px-6">{{ $mall->name }}</td>
-                            <td class="py-3 px-6">{{ $mall->location }}</td>
-                            <td class="py-3 px-6">{{ $mall->description }}</td>
-                           <td class="py-3 px-6 flex gap-2">
-                                <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition">Edit</button>
-                                <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">Delete</button>
-                            </td>
+               <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="mallsDatatables">
 
-                        </tr>
-                        @endforeach
-                    </tbody>
                 </table>
 
                 </div>

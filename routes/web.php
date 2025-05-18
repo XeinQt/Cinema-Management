@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function () {
 
     //mall controller
     Route::get('/MallsManagement', [MallsController::class, 'list'])->name('malls');
+    //malls datatables
+    Route::get('/MallsManagement/DataTables', [MallsController::class, 'dataTables'])->name('malls.dataTables');
 
 
     //cinemasController

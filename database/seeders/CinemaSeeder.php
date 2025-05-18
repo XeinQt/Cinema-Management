@@ -20,7 +20,7 @@ class CinemaSeeder extends Seeder
 
         for ($i = 0; $i < 1000; $i++) {
             $cinemas[] = [
-                'cinema_id' => $faker->unique()->numberBetween(100000, 999999),
+                'cinema_id' => $faker->unique()->numberBetween(1, 1000),
                 'mall_id' => $faker->randomElement($mall_ids),  // Random mall_id from the malls table
                 'manager_id' => $faker->randomElement($manager_ids),  // Random manager_id from the managers table
                 'name' => $faker->company() . ' Cinema',  // Random company name + " Cinema"

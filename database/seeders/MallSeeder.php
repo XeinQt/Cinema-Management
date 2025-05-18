@@ -16,7 +16,7 @@ class MallSeeder extends Seeder
 
         for ($i = 0; $i < 1000; $i++) {
             $malls[] = [
-                'mall_id' => $faker->unique()->numberBetween(100000, 999999),
+                'mall_id' => $faker->unique()->numberBetween(1, 1000),
                 'name' => $faker->company(),
                 'location' => $faker->city() . ', ' . $faker->state(),
                 'description' => $faker->sentence(),

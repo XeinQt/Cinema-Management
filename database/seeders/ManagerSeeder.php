@@ -16,7 +16,7 @@ class ManagerSeeder extends Seeder
 
         for ($i = 0; $i < 1000; $i++) {
             $managers[] = [
-                'manager_id' => $faker->unique()->numberBetween(100000, 999999),
+                'manager_id' => $faker->unique()->numberBetween(1, 1000),
                 'first_name' => $faker->firstName(),
                 'last_name' => $faker->lastName(),
                 'email' => $faker->unique()->safeEmail(),
