@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('duration'); // Removed unique constraint, unless you need it
             $table->string('description')->nullable(); // Make description optional
             $table->string('rating')->nullable(); // Rating can be optional
+              $table->boolean('active')->default(1); // or default(0) if you prefer
             $table->timestamps(); // Created_at and updated_at columns
 
             // Ensure using InnoDB for foreign key constraints

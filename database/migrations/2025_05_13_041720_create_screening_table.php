@@ -22,6 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('movie_id')->constrained('movies')->onDelete('cascade');
 
             $table->string('screening_time');
+             $table->boolean('active')->default(1); // or default(0) if you prefer
             $table->timestamps();
 
             // Ensure using InnoDB for foreign key constraints

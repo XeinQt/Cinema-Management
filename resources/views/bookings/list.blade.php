@@ -11,35 +11,8 @@
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     
                     <button class="bg-green-500 px-5 py-2 rounded-sm text-white">Add</button>
-                     <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="mallsTable">
-                        <thead class="bg-gray-100 text-gray-600 uppercase text-sm">
-                            <tr>
-                                <th class="py-3 px-6 text-left">BOOKING ID</th>
-                                <th class="py-3 px-6 text-left">CUSTOMER ID</th>
-                                <th class="py-3 px-6 text-left">SCREENING ID</th>
-                                <th class="py-3 px-6 text-left">SET NUMBER</th>
-                                <th class="py-3 px-6 text-left">STATUS</th>
-                                <th class="py-3 px-6 text-left">ACTION</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200">
-                            @foreach ($bookings as $booking)
-                            <tr class="hover:bg-gray-50">
-                                <td class="py-3 px-6">{{ $booking->booking_id }}</td>
-                                <td class="py-3 px-6">{{ $booking->customer_id }}</td>
-                                <td class="py-3 px-6">{{ $booking->screening_id }}</td>
-                                <td class="py-3 px-6">{{ $booking->set_number }}</td>
-                                <td class="py-3 px-6">{{ $booking->status }}</td>
-
-                            <td class="py-3 px-6 flex gap-2">
-                                    <button class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 transition">Accept</button>
-                                    <button class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 transition">Edit</button>
-                                    <button class="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition">Delete</button>
-                                </td>
-
-                            </tr>
-                            @endforeach
-                        </tbody>
+                     <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="bookingTable">
+                       
                     </table>
 
                 </div>

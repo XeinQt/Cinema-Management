@@ -12,6 +12,9 @@ class MallSeeder extends Seeder
     {
         $faker = Faker::create();
 
+        // Reset Faker unique state
+        $faker->unique(true);
+
         $malls = [];
 
         for ($i = 0; $i < 1000; $i++) {
@@ -20,12 +23,12 @@ class MallSeeder extends Seeder
                 'name' => $faker->company(),
                 'location' => $faker->city() . ', ' . $faker->state(),
                 'description' => $faker->sentence(),
+                'active' => $faker->numberBetween(0, 1), // no unique here
                 'created_at' => $faker->dateTimeThisYear(),
                 'updated_at' => $faker->dateTimeThisYear(),
             ];
         }
 
-        // Insert the generated malls data into the database
         DB::table('malls')->insert($malls);
     }
 }

@@ -13,14 +13,17 @@ class BookingSeeder extends Seeder
         $faker = Faker::create();
 
         $bookings = [];
+        $customer_ids = DB::table('customer')->pluck('customer_id')->toArray();
+        $screening_ids = DB::table('screening')->pluck('screening_id')->toArray();
 
         for ($i = 0; $i < 500; $i++) {
             $bookings[] = [
-                'booking_id' => $faker->unique()->numberBetween(100000, 999999),
-                'customer_id' => $faker->numberBetween(1, 1000),  // Assuming customer IDs range from 1 to 1000
-                'screening_id' => $faker->numberBetween(1, 100),  // Assuming screening IDs range from 1 to 100
+                'booking_id' => $faker->unique()->numberBetween(1, 1000),
+                'customer_id' => $faker->randomElement($customer_ids), // Assuming customer IDs range from 1 to 1000
+                'screening_id' => $faker->randomElement($screening_ids),  // Assuming screening IDs range from 1 to 100
                 'set_number' => $faker->word(),
                 'status' => $faker->randomElement(['pending', 'confirmed', 'cancelled']),
+                'active' => $faker->numberBetween(0,1),
                 'created_at' => $faker->dateTimeThisYear(),
                 'updated_at' => $faker->dateTimeThisYear(),
             ];

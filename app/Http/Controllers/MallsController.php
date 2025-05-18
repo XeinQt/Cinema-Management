@@ -11,11 +11,7 @@ class MallsController extends Controller
 {
     public function list() 
     {
-        $malls = DB::select('SELECT * FROM malls');
-
-        return view('malls.list', [
-            'malls' => $malls
-        ]);
+        return view('malls.list');
     }
 
     public function dataTables ()

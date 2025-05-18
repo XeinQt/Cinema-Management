@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('location');
             $table->string('description');
+            $table->boolean('active')->default(1); // or default(0) if you prefer
             $table->timestamps();
 
             // Ensure using InnoDB for foreign key constraints

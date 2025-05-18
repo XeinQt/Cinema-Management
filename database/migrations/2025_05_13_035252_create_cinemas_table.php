@@ -22,6 +22,7 @@ return new class extends Migration
             $table->unsignedBigInteger('manager_id')->constrained('managers')->onDelete('cascade');
 
             $table->string('name');
+             $table->boolean('active')->default(1); // or default(0) if you prefer
             $table->timestamps();
 
             // Ensure using InnoDB for foreign key constraints

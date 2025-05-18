@@ -12,6 +12,9 @@ class ManagerSeeder extends Seeder
     {
         $faker = Faker::create();
 
+        // Reset unique state
+        $faker->unique(true);
+
         $managers = [];
 
         for ($i = 0; $i < 1000; $i++) {
@@ -21,6 +24,7 @@ class ManagerSeeder extends Seeder
                 'last_name' => $faker->lastName(),
                 'email' => $faker->unique()->safeEmail(),
                 'phonenumber' => $faker->phoneNumber(),
+                'active' => $faker->numberBetween(0, 1), // no unique here
                 'created_at' => $faker->dateTimeThisYear(),
                 'updated_at' => $faker->dateTimeThisYear(),
             ];

@@ -15,6 +15,9 @@ class CustomerSeeder extends Seeder
     {
         $faker = Faker::create();
 
+        // Reset Faker unique state
+        $faker->unique(true);
+
         $data = [];
 
         for ($i = 0; $i < 1000; $i++) {
@@ -23,12 +26,12 @@ class CustomerSeeder extends Seeder
                 'last_name' => $faker->lastName,
                 'email' => $faker->unique()->safeEmail,
                 'phonenumber' => $faker->phoneNumber,
+                'active' => $faker->numberBetween(0, 1), // no unique here
                 'created_at' => now(),
                 'updated_at' => now(),
             ];
         }
 
-        // Bulk insert for performance
         foreach (array_chunk($data, 200) as $chunk) {
             DB::table('customer')->insert($chunk);
         }

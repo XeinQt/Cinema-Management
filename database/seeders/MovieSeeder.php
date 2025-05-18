@@ -18,12 +18,13 @@ class MovieSeeder extends Seeder
 
         for ($i = 0; $i < 1000; $i++) {
             $movies[] = [
-                'movie_id' => $faker->unique()->numberBetween(100000, 999999),
+                'movie_id' => $faker->unique()->numberBetween(1, 1000),
                 'title' => $faker->sentence(3),
                 'genre' => $faker->randomElement($genres),
                 'duration' => $faker->numberBetween(80, 180) . ' minutes',
                 'description' => $faker->sentence(10),
                 'rating' => $faker->randomElement(['G', 'PG', 'PG-13', 'R', 'NC-17']),
+                 'active' => $faker->numberBetween(0,1),
                 'created_at' => $faker->dateTimeThisYear(),
                 'updated_at' => $faker->dateTimeThisYear(),
             ];

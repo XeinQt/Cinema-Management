@@ -36,23 +36,29 @@ Route::middleware('auth')->group(function () {
 
     //cinemasController
     Route::get('/CinemasManagement', [CinemasController::class, 'list'])->name('cinemas');
+    Route::get('/CinemasManagement/DataTables', [CinemasController::class, 'dataTables'])->name('cinemas.dataTables');
 
 
     //managerController
     Route::get('/ManagersManagement', [ManagerController::class, 'list'])->name('managers');
+    Route::get('/ManagersManagement/DataTables', [ManagerController::class, 'dataTables'])->name('managers.dataTables');
 
 
     //Screnning Controller
     Route::get('/ScreeningsManagement', [ScreeningController::class, 'list'])->name('screenings');
+    Route::get('/ScreeningsManagement/DataTables', [ScreeningController::class, 'dataTables'])->name('screenings.dataTables');
 
     //Movies Controller
     Route::get('/MoviesManagement', [MovieController::class, 'list'])->name('movies');
+    Route::get('/MoviesManagement/DataTables', [MovieController::class, 'dataTables'])->name('movies.dataTables');
 
     //Booking Controller
     Route::get('/BookingsManagement', [BookingController::class, 'list'])->name('bookings');
+    Route::get('/BookingsManagement/DataTables', [BookingController::class, 'dataTables'])->name('bookings.dataTables');
 
     //Customer Controller
     Route::get('/CustomersManagement', [CustomerController::class, 'list'])->name('customers');
+    Route::get('/CustomersManagement/DataTables', [CustomerController::class, 'dataTables'])->name('customers.dataTables');
 
     
 });

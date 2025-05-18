@@ -24,6 +24,7 @@ return new class extends Migration
 
             $table->string('set_number');
             $table->string('status');
+              $table->boolean('active')->default(1); // or default(0) if you prefer
             $table->timestamps();
 
             // Ensure using InnoDB for foreign key constraints
