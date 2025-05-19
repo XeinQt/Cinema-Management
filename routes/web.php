@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function () {
     //Movies Controller
     Route::get('/MoviesManagement', [MovieController::class, 'list'])->name('movies');
     Route::get('/MoviesManagement/DataTables', [MovieController::class, 'dataTables'])->name('movies.dataTables');
+    Route::post('/MoviesManagement/create', [MovieController::class, 'store'])->name('movies.store');
 
     //Booking Controller
     Route::get('/BookingsManagement', [BookingController::class, 'list'])->name('bookings');
