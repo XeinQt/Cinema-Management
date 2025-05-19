@@ -36,6 +36,47 @@ new DataTable("#mallsDatatables", {
     ],
 });
 
+//customer tables
+
+new DataTable("#customerTable", {
+    ajax: baseUrl() + "/CustomersManagement/DataTables",
+    processing: true,
+    serverSide: true,
+    columnDefs: [{ targets: "_all", visivle: false }],
+    columns: [
+        {
+            data: "customer_id",
+            name: "customer_id",
+            title: "Customer ID",
+        },
+        {
+            data: "first_name",
+            name: "first_name",
+            title: "First Name",
+        },
+        {
+            data: "last_name",
+            name: "last_name",
+            title: "Last Name",
+        },
+        {
+            data: "email",
+            name: "email",
+            title: "Email",
+        },
+        {
+            data: "phonenumber",
+            name: "phonenumber",
+            title: "Phone No.",
+        },
+        {
+            data: "active",
+            name: "active",
+            title: "Active",
+        },
+    ],
+});
+
 //cinemnas
 new DataTable("#cinemaTable", {
     ajax: baseUrl() + "/CinemasManagement/DataTables",
@@ -82,46 +123,6 @@ new DataTable("#managerTable", {
             data: "manager_id",
             name: "manager_id",
             title: "Manager ID",
-        },
-        {
-            data: "first_name",
-            name: "first_name",
-            title: "First Name",
-        },
-        {
-            data: "last_name",
-            name: "last_name",
-            title: "Last Name",
-        },
-        {
-            data: "email",
-            name: "email",
-            title: "Email",
-        },
-        {
-            data: "phonenumber",
-            name: "phonenumber",
-            title: "Phone No.",
-        },
-        {
-            data: "active",
-            name: "active",
-            title: "Active",
-        },
-    ],
-});
-
-//customer tables
-new DataTable("#customerTable", {
-    ajax: baseUrl() + "/CustomersManagement/DataTables",
-    processing: true,
-    serverSide: true,
-    columnDefs: [{ targets: "_all", visivle: false }],
-    columns: [
-        {
-            data: "customer_id",
-            name: "customer_id",
-            title: "Customer ID",
         },
         {
             data: "first_name",

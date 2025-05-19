@@ -22,7 +22,7 @@
     <!-- Modal -->
     <div id="addManagerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-900 p-6 rounded-md w-full max-w-md">
-            <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Add Mall</h2>
+            <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Add Manager</h2>
             <form id="addManagerForm">
                 @csrf
                 <div class="mb-4">

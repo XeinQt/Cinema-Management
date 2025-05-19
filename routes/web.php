@@ -60,6 +60,7 @@ Route::middleware('auth')->group(function () {
     //Customer Controller
     Route::get('/CustomersManagement', [CustomerController::class, 'list'])->name('customers');
     Route::get('/CustomersManagement/DataTables', [CustomerController::class, 'dataTables'])->name('customers.dataTables');
+    Route::post('/CustomersManagement/create', [CustomerController::class, 'store'])->name('customers.store');
 
     
 });
