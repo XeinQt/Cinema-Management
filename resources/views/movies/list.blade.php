@@ -11,11 +11,7 @@
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                    
                     <button class="bg-green-500 px-5 py-2 rounded-sm text-white">Add</button>
-                     <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="moviesTable">
-                       
-                    </table>
-
-
+                    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="moviesTable"></table>
 
                 </div>
             </div>

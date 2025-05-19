@@ -40,6 +40,8 @@ Route::middleware('auth')->group(function () {
     //managerController
     Route::get('/ManagersManagement', [ManagerController::class, 'list'])->name('managers');
     Route::get('/ManagersManagement/DataTables', [ManagerController::class, 'dataTables'])->name('managers.dataTables');
+    //add manager
+    Route::post('/ManagersManagement/create', [ManagerController::class, 'store'])->name('managers.store');
 
 
     //Screnning Controller

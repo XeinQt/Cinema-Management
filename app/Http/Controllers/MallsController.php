@@ -20,7 +20,7 @@ class MallsController extends Controller
        return DataTables::of($malls)->make(true);
     }
 
-     public function store(Request $request)
+   public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -28,10 +28,24 @@ class MallsController extends Controller
             'description' => 'required|string|max:255',
         ]);
 
-        DB::insert('INSERT INTO malls (name,location,description, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())', [
+        // Check if mall with same name, location, and description exists (case-insensitive)
+        $existingMall = DB::select('
+            SELECT * FROM malls 
+            WHERE LOWER(name) = ? AND LOWER(location) = ? AND LOWER(description) = ?',
+            [strtolower($request->name), strtolower($request->location), strtolower($request->description)]
+        );
+
+        if (!empty($existingMall)) {
+            return response()->json([
+                'message' => 'A mall with the same name, location, and description already exists.'
+            ], 422);
+        }
+
+        // Insert new mall
+        DB::insert('INSERT INTO malls (name, location, description, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())', [
             $request->name,
             $request->location,
-            $request->description
+            $request->description,
         ]);
 
         return response()->json(['message' => 'Mall added successfully']);
