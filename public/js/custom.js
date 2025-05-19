@@ -1,5 +1,3 @@
-let table = new DataTable("#mallsTable ");
-
 function baseUrl() {
     return location.protocol + "//" + location.host + "";
 }
@@ -8,10 +6,7 @@ new DataTable("#mallsDatatables", {
     ajax: baseUrl() + "/MallsManagement/DataTables",
     processing: true,
     serverSide: true,
-    columnDefs: [
-        { targets: [0, 1, 2, 3, 4], visible: true },
-        { targets: "_all", visivle: false },
-    ],
+    columnDefs: [{ targets: "_all", visivle: false }],
     columns: [
         {
             data: "mall_id",
@@ -46,10 +41,7 @@ new DataTable("#cinemaTable", {
     ajax: baseUrl() + "/CinemasManagement/DataTables",
     processing: true,
     serverSide: true,
-    columnDefs: [
-        { targets: [0, 1, 2, 3, 4], visible: true },
-        { targets: "_all", visivle: false },
-    ],
+    columnDefs: [{ targets: "_all", visivle: false }],
     columns: [
         {
             data: "cinema_id",
@@ -84,10 +76,7 @@ new DataTable("#managerTable", {
     ajax: baseUrl() + "/ManagersManagement/DataTables",
     processing: true,
     serverSide: true,
-    columnDefs: [
-        { targets: [0, 1, 2, 3, 4, 5], visible: true },
-        { targets: "_all", visivle: false },
-    ],
+    columnDefs: [{ targets: "_all", visivle: false }],
     columns: [
         {
             data: "manager_id",
@@ -127,10 +116,7 @@ new DataTable("#customerTable", {
     ajax: baseUrl() + "/CustomersManagement/DataTables",
     processing: true,
     serverSide: true,
-    columnDefs: [
-        { targets: [0, 1, 2, 3, 4, 5], visible: true },
-        { targets: "_all", visivle: false },
-    ],
+    columnDefs: [{ targets: "_all", visivle: false }],
     columns: [
         {
             data: "customer_id",
@@ -170,10 +156,7 @@ new DataTable("#moviesTable", {
     ajax: baseUrl() + "/MoviesManagement/DataTables",
     processing: true,
     serverSide: true,
-    columnDefs: [
-        { targets: [0, 1, 2, 3, 4, 5, 6], visible: true },
-        { targets: "_all", visivle: false },
-    ],
+    columnDefs: [{ targets: "_all", visivle: false }],
     columns: [
         {
             data: "movie_id",
@@ -218,10 +201,7 @@ new DataTable("#screeningTable", {
     ajax: baseUrl() + "/ScreeningsManagement/DataTables",
     processing: true,
     serverSide: true,
-    columnDefs: [
-        { targets: [0, 1, 2, 3, 4], visible: true },
-        { targets: "_all", visivle: false },
-    ],
+    columnDefs: [{ targets: "_all", visivle: false }],
     columns: [
         {
             data: "screening_id",
@@ -256,10 +236,7 @@ new DataTable("#bookingTable", {
     ajax: baseUrl() + "/BookingsManagement/DataTables",
     processing: true,
     serverSide: true,
-    columnDefs: [
-        { targets: [0, 1, 2, 3, 4, 5], visible: true },
-        { targets: "_all", visivle: false },
-    ],
+    columnDefs: [{ targets: "_all", visivle: false }],
     columns: [
         {
             data: "booking_id",

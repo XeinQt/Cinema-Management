@@ -10,10 +10,6 @@ use App\Http\Controllers\MovieController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CustomerController;
 
-
-
-
-
 Route::get('/', function () {
     return view('welcome');
 });
@@ -32,6 +28,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/MallsManagement', [MallsController::class, 'list'])->name('malls');
     //malls datatables
     Route::get('/MallsManagement/DataTables', [MallsController::class, 'dataTables'])->name('malls.dataTables');
+    //add mall
+    Route::post('/MallsManagement/create', [MallsController::class, 'store'])->name('malls.store');
 
 
     //cinemasController

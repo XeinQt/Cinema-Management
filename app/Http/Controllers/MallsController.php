@@ -19,5 +19,22 @@ class MallsController extends Controller
        $malls = DB::select('SELECT * FROM malls'); 
        return DataTables::of($malls)->make(true);
     }
+
+     public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'description' => 'required|string|max:255',
+        ]);
+
+        DB::insert('INSERT INTO malls (name,location,description, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())', [
+            $request->name,
+            $request->location,
+            $request->description
+        ]);
+
+        return response()->json(['message' => 'Mall added successfully']);
+    }
 }
 
