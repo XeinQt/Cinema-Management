@@ -1,45 +1,55 @@
 <x-app-layout>
+    {{-- Header Section --}}
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
             {{ __('Movies Management') }}
         </h2>
     </x-slot>
 
+    {{-- Main Content Section --}}
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
-                   
                     <button onclick="openModal()" class="bg-green-500 px-5 py-2 rounded-sm text-white">Add</button>
                     <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="moviesTable"></table>
-
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- modal --}}
+    {{-- Add Movies Modal --}}
     <div id="addMoviesModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-900 p-6 rounded-md w-full max-w-md">
             <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Add Movies</h2>
+            
             <form id="addMovieForm">
                 @csrf
+                {{-- Movie Title --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Title</label>
                     <input type="text" name="title" class="w-full px-3 py-2 border rounded" required>
                 </div>
+
+                {{-- Movie Genre --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Genre</label>
                     <input type="text" name="genre" class="w-full px-3 py-2 border rounded" required>
                 </div>
+
+                {{-- Movie Duration --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Duration</label>
                     <input type="text" name="duration" class="w-full px-3 py-2 border rounded" required>
                 </div>
+
+                {{-- Movie Description --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Description</label>
                     <input type="text" name="description" class="w-full px-3 py-2 border rounded" required>
                 </div>
+
+                {{-- Movie Rating --}}
                <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Rating</label>
                     <select name="rating" class="w-full px-3 py-2 border rounded" required>
@@ -52,18 +62,23 @@
                     </select>
                 </div>
 
-
+                {{-- Form Actions --}}
                 <div class="flex justify-end">
-                    <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
+                    <button type="button" onclick="closeModal()" 
+                            class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
                 </div>
             </form>
         </div>
     </div>
 
+    {{-- JavaScript Section --}}
     <script>
+        // Modal Element
         const modal = document.getElementById('addMoviesModal');
 
+        // Modal Functions
         function openModal() {
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -74,12 +89,12 @@
             modal.classList.remove('flex');
         }
 
-        // AJAX submit
+        // Form Submission Handler
         document.getElementById('addMovieForm').addEventListener('submit', async function (e) {
             e.preventDefault();
-
             const formData = new FormData(this);
 
+            try {
             const response = await fetch("{{ route('movies.store') }}", {
                 method: 'POST',
                 headers: {
@@ -90,12 +105,11 @@
             });
 
             if (response.ok) {
-                Swal.fire({
-                    position: "center",
-                    icon: "success",
-                    title: "Movie Added Successfully!",
-                    showConfirmButton: false,
-                    timer: 1500
+                const data = await response.json();
+                 Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: data.message || 'Mall added successfully.'
                 });
 
                 this.reset();
@@ -108,7 +122,9 @@
                     title: 'Oops...',
                     text: error.message || "Failed to add Movie."
                 });
-                
+                }
+            } catch (error) {
+                console.error('Error:', error);
             }
         });
     </script>

@@ -26,6 +26,16 @@ class ManagerController extends Controller
              'phonenumber' => 'required|string|max:255',
         ]);
 
+         $existingManagers = DB::table('managers')
+            ->whereRaw('LOWER(email) = ?', [strtolower($request->email)])
+            ->exists();
+
+        if ($existingManagers) {
+            return response()->json([
+                'message' => 'Email already exists.'
+            ], 422);
+        }
+
         // Check if mall with same fnamae, lname, email  and phono number exists (case-insensitive)
         $existingManager = DB::select('
             SELECT * FROM managers 

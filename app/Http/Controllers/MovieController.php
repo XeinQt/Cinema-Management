@@ -28,8 +28,6 @@ class MovieController extends Controller
             'description' => 'required|string|max:255',
             'rating' => 'required',
         ]);
-
-        // Check if mall with same fnamae, lname, email  and phono number exists (case-insensitive)
         $existingMovie = DB::select('
             SELECT * FROM movies 
             WHERE LOWER(title) = ? AND LOWER(genre) = ? AND LOWER(duration) = ? AND LOWER(description) = ? AND LOWER(rating) = ?', 

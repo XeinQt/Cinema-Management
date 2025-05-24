@@ -14,7 +14,7 @@ class BookingSeeder extends Seeder
 
         $bookings = [];
         $customer_ids = DB::table('customer')->pluck('customer_id')->toArray();
-        $screening_ids = DB::table('screening')->pluck('screening_id')->toArray();
+        $screening_ids = DB::table('screenings')->pluck('screening_id')->toArray();
 
         for ($i = 0; $i < 500; $i++) {
             $bookings[] = [

@@ -46,61 +46,62 @@
             </form>
         </div>
     </div>
+</x-app-layout>
+<script>
+    const modal = document.getElementById("addCustomerModal");
 
+    function openModal() {
+        modal.classList.remove("hidden");
+        modal.classList.add("flex");
+    }
 
-     <script >
+    function closeModal() {
+        modal.classList.add("hidden");
+        modal.classList.remove("flex");
+    }
 
-        const modal = document.getElementById("addCustomerModal");
+    // AJAX submit
+    document.getElementById("addCustomerForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
 
-        function openModal() {
-            modal.classList.remove("hidden");
-            modal.classList.add("flex");
-        }
+        const formData = new FormData(this);
 
-        function closeModal() {
-            modal.classList.add("hidden");
-            modal.classList.remove("flex");
-        }
-
-        // AJAX submit
-        document
-            .getElementById("addCustomerForm")
-            .addEventListener("submit", async function (e) {
-                e.preventDefault();
-
-                const formData = new FormData(this);
-
-                const response = await fetch("{{ route('customers.store') }}", {
-                    method: "POST",
-                    headers: {
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                        Accept: "application/json",
-                    },
-                    body: formData,
-                });
-
-                if (response.ok) {
-                    Swal.fire({
-                        position: "center",
-                        icon: "success",
-                        title: "Customer Added Successfully!",
-                        showConfirmButton: false,
-                        timer: 1500,
-                    });
-
-                    this.reset();
-                    closeModal();
-                    mallsDatatables.ajax.reload();
-                } else {
-                    const error = await response.json();
-                    Swal.fire({
-                        icon: "error",
-                        title: "Oops...",
-                        text: error.message || "Failed to add Customer.",
-                    });
-                }
+        try {
+            const response = await fetch("{{ route('customers.store') }}", {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
+                    Accept: "application/json",
+                },
+                body: formData,
             });
 
-     </script>
+            const data = await response.json();
 
-</x-app-layout>
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: data.message || 'Customer added successfully.'
+                });
+
+                this.reset();
+                closeModal();
+            } else {
+                // Handle validation or duplicate error
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: data.message || "Failed to add Customer.",
+                });
+            }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Unexpected Error",
+                text: "Something went wrong. Please try again.",
+            });
+        }
+    });
+</script>

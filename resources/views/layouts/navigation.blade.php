@@ -22,18 +22,13 @@
                     </x-nav-link>
                 </div>
                  <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('cinemas')" :active="request()->routeIs('cinemas')">
-                        {{ __('Cinemas') }}
-                    </x-nav-link>
-                </div>
-                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('managers')" :active="request()->routeIs('managers')">
                         {{ __('Manager') }}
                     </x-nav-link>
                 </div>
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('screenings')" :active="request()->routeIs('screenings')">
-                        {{ __('Screening') }}
+                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('cinemas')" :active="request()->routeIs('cinemas')">
+                        {{ __('Cinemas') }}
                     </x-nav-link>
                 </div>
                  <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
@@ -42,13 +37,18 @@
                     </x-nav-link>
                 </div>
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('bookings')" :active="request()->routeIs('bookings')">
-                        {{ __('Booking') }}
+                    <x-nav-link :href="route('screenings')" :active="request()->routeIs('screenings')">
+                        {{ __('Screening') }}
                     </x-nav-link>
                 </div>
                  <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                     <x-nav-link :href="route('customers')" :active="request()->routeIs('customers')">
                         {{ __('Customers') }}
+                    </x-nav-link>
+                </div>
+                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
+                    <x-nav-link :href="route('bookings')" :active="request()->routeIs('bookings')">
+                        {{ __('Booking') }}
                     </x-nav-link>
                 </div>
             </div>

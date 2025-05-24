@@ -28,7 +28,6 @@ class MallsController extends Controller
             'description' => 'required|string|max:255',
         ]);
 
-        // Check if mall with same name, location, and description exists (case-insensitive)
         $existingMall = DB::select('
             SELECT * FROM malls 
             WHERE LOWER(name) = ? AND LOWER(location) = ? AND LOWER(description) = ?',
@@ -41,7 +40,6 @@ class MallsController extends Controller
             ], 422);
         }
 
-        // Insert new mall
         DB::insert('INSERT INTO malls (name, location, description, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())', [
             $request->name,
             $request->location,

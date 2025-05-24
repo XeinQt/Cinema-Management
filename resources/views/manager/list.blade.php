@@ -78,14 +78,12 @@
             });
 
             if (response.ok) {
+                const data = await response.json();
                 Swal.fire({
-                    position: "center",
-                    icon: "success",
-                    title: "Manager Added Successfully!",
-                    showConfirmButton: false,
-                    timer: 1500
+                    icon: 'success',
+                    title: 'Success',
+                    text: data.message || 'Manager added successfully.'
                 });
-
                 this.reset();
                 closeModal();
                 mallsDatatables.ajax.reload();

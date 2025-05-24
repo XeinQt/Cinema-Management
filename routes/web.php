@@ -23,46 +23,33 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-
-    //mall controller
     Route::get('/MallsManagement', [MallsController::class, 'list'])->name('malls');
-    //malls datatables
     Route::get('/MallsManagement/DataTables', [MallsController::class, 'dataTables'])->name('malls.dataTables');
-    //add mall
     Route::post('/MallsManagement/create', [MallsController::class, 'store'])->name('malls.store');
 
-
-    //cinemasController
     Route::get('/CinemasManagement', [CinemasController::class, 'list'])->name('cinemas');
     Route::get('/CinemasManagement/DataTables', [CinemasController::class, 'dataTables'])->name('cinemas.dataTables');
+    Route::post('/CinemasManagement/create', [CinemasController::class, 'store'])->name('cinemas.store');
 
-
-    //managerController
     Route::get('/ManagersManagement', [ManagerController::class, 'list'])->name('managers');
     Route::get('/ManagersManagement/DataTables', [ManagerController::class, 'dataTables'])->name('managers.dataTables');
-    //add manager
     Route::post('/ManagersManagement/create', [ManagerController::class, 'store'])->name('managers.store');
 
-
-    //Screnning Controller
     Route::get('/ScreeningsManagement', [ScreeningController::class, 'list'])->name('screenings');
     Route::get('/ScreeningsManagement/DataTables', [ScreeningController::class, 'dataTables'])->name('screenings.dataTables');
+    Route::post('/ScreeningsManagement/create', [ScreeningController::class, 'store'])->name('screenings.store');
 
-    //Movies Controller
     Route::get('/MoviesManagement', [MovieController::class, 'list'])->name('movies');
     Route::get('/MoviesManagement/DataTables', [MovieController::class, 'dataTables'])->name('movies.dataTables');
     Route::post('/MoviesManagement/create', [MovieController::class, 'store'])->name('movies.store');
 
-    //Booking Controller
     Route::get('/BookingsManagement', [BookingController::class, 'list'])->name('bookings');
     Route::get('/BookingsManagement/DataTables', [BookingController::class, 'dataTables'])->name('bookings.dataTables');
+    Route::post('/BookingsManagement/create', [BookingController::class, 'store'])->name('bookings.store');
 
-    //Customer Controller
     Route::get('/CustomersManagement', [CustomerController::class, 'list'])->name('customers');
     Route::get('/CustomersManagement/DataTables', [CustomerController::class, 'dataTables'])->name('customers.dataTables');
     Route::post('/CustomersManagement/create', [CustomerController::class, 'store'])->name('customers.store');
-
-    
 });
 
 require __DIR__.'/auth.php';

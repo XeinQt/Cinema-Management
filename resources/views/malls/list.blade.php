@@ -98,12 +98,11 @@
             });
 
             if (response.ok) {
-                Swal.fire({
-                    position: "center",
-                    icon: "success",
-                    title: "Mall Added Successfully!",
-                    showConfirmButton: false,
-                    timer: 1500
+                const data = await response.json();
+                 Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: data.message || 'Mall added successfully.'
                 });
 
                 this.reset();

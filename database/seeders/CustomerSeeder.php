@@ -24,7 +24,7 @@ class CustomerSeeder extends Seeder
             $data[] = [
                 'first_name' => $faker->firstName,
                 'last_name' => $faker->lastName,
-                'email' => $faker->unique()->safeEmail,
+                'email' => $faker->safeEmail,
                 'phonenumber' => $faker->phoneNumber,
                 'active' => $faker->numberBetween(0, 1), // no unique here
                 'created_at' => now(),

@@ -27,6 +27,16 @@ class CustomerController extends Controller
              'phonenumber' => 'required|string|max:255',
         ]);
 
+        $existingCustomer = DB::table('customer')
+            ->whereRaw('LOWER(email) = ?', [strtolower($request->email)])
+            ->exists();
+
+        if ($existingCustomer) {
+            return response()->json([
+                'message' => 'Email already exists.'
+            ], 422);
+        }
+
         // Check if mall with same fnamae, lname, email  and phono number exists (case-insensitive)
         $existingCustomer = DB::select('
             SELECT * FROM customer 
