@@ -28,25 +28,49 @@
                 {{-- Movie Title --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Title</label>
-                    <input type="text" name="title" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="title" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter movie title (e.g., The Dark Knight)"
+                        required
+                    >
                 </div>
 
                 {{-- Movie Genre --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Genre</label>
-                    <input type="text" name="genre" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="genre" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter genre (e.g., Action, Drama, Comedy)"
+                        required
+                    >
                 </div>
 
                 {{-- Movie Duration --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Duration</label>
-                    <input type="text" name="duration" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="duration" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter duration (e.g., 2h 30m)"
+                        required
+                    >
                 </div>
 
                 {{-- Movie Description --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Description</label>
-                    <input type="text" name="description" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="description" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter brief movie plot or synopsis"
+                        required
+                    >
                 </div>
 
                 {{-- Movie Rating --}}

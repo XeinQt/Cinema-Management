@@ -25,19 +25,43 @@
                 @csrf
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">First Name</label>
-                    <input type="text" name="first_name" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="first_name" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter first name (e.g., Juan)"
+                        required
+                    >
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Last Name</label>
-                    <input type="text" name="last_name" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="last_name" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter last name (e.g., Dela Cruz)"
+                        required
+                    >
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Email</label>
-                    <input type="email" name="email" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="email" 
+                        name="email" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter email (e.g., juan.delacruz@email.com)"
+                        required
+                    >
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Phone No.</label>
-                    <input type="text" name="phonenumber" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="phonenumber" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="+63 912 345 6789"
+                        required
+                    >
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>

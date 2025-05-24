@@ -21,7 +21,8 @@
     <!-- Add booking Modal -->
     <div id="addBookingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-900 p-6 rounded-md w-full max-w-md">
-            <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Add Cinema</h2>
+            <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Add Booking</h2>
+
             <form id="addBooking">
                 @csrf
                 <div class="mb-4">
@@ -37,14 +38,40 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Screening ID</label>
-                    <input 
-                        type="number" 
-                        name="screening_id" 
-                        id="screening_id" 
+                    <label class="block text-gray-700 dark:text-gray-300">Cinema</label>
+                    <select 
+                        name="cinema_name" 
+                        id="cinema_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
                     >
+                        <option value="">Select Cinema</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Movie</label>
+                    <select 
+                        name="movie_title" 
+                        id="movie_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Movie</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Date & Time</label>
+                    <select 
+                        name="time" 
+                        id="screening_time" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                        disabled
+                    >
+                        <option value="">Select movie and cinema first</option>
+                    </select>
                 </div>
 
                 <div class="mb-4">
@@ -54,6 +81,7 @@
                         name="seat_number" 
                         id="seat_number" 
                         class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter seat number (e.g., A1, B12, C5)"
                         required
                     >
                 </div>
@@ -135,6 +163,103 @@
         }
     });
 
-    // Connect add button to modal
-    document.querySelector('button.bg-green-500').addEventListener('click', openModal);
+    // Function to populate cinema and movie dropdowns
+    async function populateDropdowns() {
+        try {
+            // Fetch cinemas
+            const cinemasResponse = await fetch('/CinemasManagement/DataTables');
+            const cinemasData = await cinemasResponse.json();
+            const cinemaSelect = document.getElementById('cinema_select');
+            
+            cinemasData.data.forEach(cinema => {
+                const option = document.createElement('option');
+                option.value = cinema.cinema_id;
+                option.textContent = cinema.name;
+                cinemaSelect.appendChild(option);
+            });
+
+            // Fetch movies
+            const moviesResponse = await fetch('/MoviesManagement/DataTables');
+            const moviesData = await moviesResponse.json();
+            const movieSelect = document.getElementById('movie_select');
+            
+            moviesData.data.forEach(movie => {
+                const option = document.createElement('option');
+                option.value = movie.movie_id;
+                option.textContent = movie.title;
+                movieSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error loading dropdowns:', error);
+        }
+    }
+
+    // Call populateDropdowns when opening the modal
+    document.querySelector('button.bg-green-500').addEventListener('click', () => {
+        openModal();
+        populateDropdowns();
+    });
+
+    // Add event listeners for movie and cinema selection
+    document.getElementById('cinema_select').addEventListener('change', fetchScreeningTimes);
+    document.getElementById('movie_select').addEventListener('change', fetchScreeningTimes);
+
+    // Function to fetch and populate screening times
+    async function fetchScreeningTimes() {
+        const cinemaId = document.getElementById('cinema_select').value;
+        const movieId = document.getElementById('movie_select').value;
+        const timeSelect = document.getElementById('screening_time');
+        
+        // Reset and disable time dropdown if either cinema or movie is not selected
+        if (!cinemaId || !movieId) {
+            timeSelect.innerHTML = '<option value="">Select movie and cinema first</option>';
+            timeSelect.disabled = true;
+            return;
+        }
+
+        try {
+            const response = await fetch('/ScreeningsManagement/DataTables');
+            const data = await response.json();
+            
+            // Filter screenings for selected cinema and movie
+            const availableScreenings = data.data.filter(screening => 
+                screening.cinema_id == cinemaId && 
+                screening.movie_id == movieId
+            );
+
+            // Clear and populate time dropdown
+            timeSelect.innerHTML = '<option value="">Select screening time</option>';
+            
+            if (availableScreenings.length === 0) {
+                timeSelect.innerHTML += '<option value="" disabled>No screenings available</option>';
+            } else {
+                availableScreenings.forEach(screening => {
+                    const screeningTime = new Date(screening.screening_time);
+                    const formattedTime = screeningTime.toLocaleString('en-US', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    timeSelect.innerHTML += `
+                        <option value="${screening.screening_time}">
+                            ${formattedTime}
+                        </option>
+                    `;
+                });
+            }
+            
+            timeSelect.disabled = false;
+        } catch (error) {
+            console.error('Error fetching screening times:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Failed to load screening times'
+            });
+        }
+    }
 </script>

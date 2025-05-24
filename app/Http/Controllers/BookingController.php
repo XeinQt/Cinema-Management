@@ -5,51 +5,49 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Yajra\DataTables\DataTables;
+use Carbon\Carbon;
 
 class BookingController extends Controller
 {
-    public function list () {
-        return view ('bookings.list');
-    }
-     public function dataTables () {
-        
-     $bookings = DB::select('SELECT * FROM booking');
-       return DataTables::of($bookings)->make(true);
+    public function list() {
+        return view('bookings.list');
     }
 
+    public function dataTables() {
+        $bookings = DB::select('SELECT * FROM booking');
+        return DataTables::of($bookings)->make(true);
+    }
 
     public function store(Request $request)
     {
         try {
-            // Validate the request
+            // Basic request validation
             $request->validate([
                 'customer_full_name' => 'required|string|max:255',
-                'screening_id' => 'required|integer',
+                'cinema_name' => 'required|numeric',
+                'movie_title' => 'required|numeric',
+                'time' => 'required|date',
                 'seat_number' => 'required|string|max:10',
-                'status' => 'required|in:confirmed,cancelled'
+                'status' => 'required|in:confirmed,pending,cancelled'
             ]);
 
-            // Split the full name into first and last name
-            $fullName = trim($request->customer_full_name);
-            $nameParts = preg_split('/\s+/', $fullName);
-
+            // 1. Get customer ID from full name
+            $nameParts = explode(' ', trim($request->customer_full_name));
             if (count($nameParts) < 2) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Please provide both first and last name for the customer.',
-                ], 422);
+                    'message' => 'Please provide both first and last name'
+                ], 400);
             }
 
             $firstName = $nameParts[0];
-            $lastName = $nameParts[1];
+            $lastName = end($nameParts);
 
-            // Check if customer exists
-            $customer = DB::select('
+            $customer = DB::select("
                 SELECT customer_id 
-                FROM customer 
-                WHERE first_name = ? 
-                AND last_name = ? 
-                LIMIT 1', 
+                FROM customer
+                WHERE LOWER(first_name) = LOWER(?) 
+                AND LOWER(last_name) = LOWER(?)", 
                 [$firstName, $lastName]
             );
 
@@ -60,18 +58,36 @@ class BookingController extends Controller
                 ], 404);
             }
 
-            $customerId = $customer[0]->customer_id;
+            // 2. Get screening ID using cinema_id and movie_id
+            $screening = DB::select("
+                SELECT screening_id 
+                FROM screenings 
+                WHERE cinema_id = ? 
+                AND movie_id = ? 
+                AND screening_time = ?", 
+                [
+                    $request->cinema_name,
+                    $request->movie_title,
+                    $request->time
+                ]
+            );
 
-            // Check if seat is already booked
+            if (empty($screening)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No screening found for the selected time.'
+                ], 404);
+            }
+
+            // 3. Check if seat is available
             $existingBooking = DB::select("
                 SELECT booking_id 
-                FROM booking 
+                FROM booking
                 WHERE screening_id = ? 
                 AND set_number = ? 
-                AND status = 'confirmed'
-                AND active = 1", 
+                AND status != 'cancelled'", 
                 [
-                    $request->screening_id,
+                    $screening[0]->screening_id,
                     $request->seat_number
                 ]
             );
@@ -79,32 +95,32 @@ class BookingController extends Controller
             if (!empty($existingBooking)) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'This seat is already booked for this screening.'
-                ], 422);
+                    'message' => 'This seat is already booked.'
+                ], 400);
             }
 
-            // Insert the booking
+            // 4. Save booking with only IDs
             DB::insert("
                 INSERT INTO booking (
-                    customer_id,
-                    screening_id,
-                    set_number,
-                    status,
-                    active,
-                    created_at,
+                    customer_id, 
+                    screening_id, 
+                    set_number, 
+                    status, 
+                    created_at, 
                     updated_at
-                ) VALUES (?, ?, ?, ?, 1, NOW(), NOW())
-            ", [
-                $customerId,
-                $request->screening_id,
-                $request->seat_number,
-                $request->status
-            ]);
+                ) VALUES (?, ?, ?, ?, NOW(), NOW())", 
+                [
+                    $customer[0]->customer_id,
+                    $screening[0]->screening_id,
+                    $request->seat_number,
+                    $request->status
+                ]
+            );
 
             return response()->json([
-                'status' => 'success',
+                'success' => true,
                 'message' => 'Booking created successfully'
-            ], 201);
+            ]);
 
         } catch (\Exception $e) {
             return response()->json([

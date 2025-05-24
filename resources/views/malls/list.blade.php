@@ -50,15 +50,33 @@
                 @csrf
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Mall Name</label>
-                    <input type="text" name="name" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="name" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter mall name (e.g., SM Mall of Asia, Ayala Mall)"
+                        required
+                    >
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Location</label>
-                    <input type="text" name="location" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="location" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="123 Main Street, City, Province, ZIP Code"
+                        required
+                    >
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Description</label>
-                    <input type="text" name="description" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="description" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="A premier shopping destination with entertainment facilities"
+                        required
+                    >
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>

@@ -25,13 +25,27 @@
 
                 {{-- mall name --}}
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Cinema name</label>
-                    <input type="text" name="cinemaName" id="name" class="w-full px-3 py-2 border rounded" required>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Cinema</label>
+                    <select 
+                        name="cinemaName" 
+                        id="cinema_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Cinema</option>
+                    </select>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Movie Name</label>
-                    <input type="text" name="movieName" class="w-full px-3 py-2 border rounded" required>
+                    <label class="block text-gray-700 dark:text-gray-300">Movie</label>
+                    <select 
+                        name="movieName" 
+                        id="movie_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Movie</option>
+                    </select>
                 </div>
 
                 <div class="mb-4">
@@ -61,6 +75,53 @@ function closeModal() {
 function openModal() {
     document.getElementById('addScreeningModal').classList.remove('hidden');
     document.getElementById('addScreeningModal').classList.add('flex');
+    populateDropdowns();
+}
+
+// Function to populate cinema and movie dropdowns
+async function populateDropdowns() {
+    try {
+        // Fetch cinemas
+        const cinemasResponse = await fetch('/CinemasManagement/DataTables');
+        const cinemasData = await cinemasResponse.json();
+        const cinemaSelect = document.getElementById('cinema_select');
+        
+        // Clear existing options except the first one
+        while (cinemaSelect.options.length > 1) {
+            cinemaSelect.remove(1);
+        }
+        
+        cinemasData.data.forEach(cinema => {
+            const option = document.createElement('option');
+            option.value = cinema.name;  // Using name as value since ScreeningController expects name
+            option.textContent = cinema.name;
+            cinemaSelect.appendChild(option);
+        });
+
+        // Fetch movies
+        const moviesResponse = await fetch('/MoviesManagement/DataTables');
+        const moviesData = await moviesResponse.json();
+        const movieSelect = document.getElementById('movie_select');
+        
+        // Clear existing options except the first one
+        while (movieSelect.options.length > 1) {
+            movieSelect.remove(1);
+        }
+        
+        moviesData.data.forEach(movie => {
+            const option = document.createElement('option');
+            option.value = movie.title;  // Using title as value since ScreeningController expects title
+            option.textContent = movie.title;
+            movieSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading dropdowns:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load cinema and movie data'
+        });
+    }
 }
 
 document.getElementById('addScreeningForm').addEventListener('submit', async function(e) {

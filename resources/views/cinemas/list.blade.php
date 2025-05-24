@@ -28,18 +28,38 @@
 
                 {{-- mall name --}}
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Mall name</label>
-                    <input type="text" name="name" id="name" class="w-full px-3 py-2 border rounded" required>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Mall</label>
+                    <select 
+                        name="name" 
+                        id="mall_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Mall</option>
+                    </select>
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Manager Name</label>
-                    <input type="text" name="manager_full_name" class="w-full px-3 py-2 border rounded" required>
+                    <label class="block text-gray-700 dark:text-gray-300">Manager</label>
+                    <select 
+                        name="manager_full_name" 
+                        id="manager_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Manager</option>
+                    </select>
                 </div>
 
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Cinema Name</label>
-                    <input type="text" name="cinema_name" class="w-full px-3 py-2 border rounded" required>
+                    <input 
+                        type="text" 
+                        name="cinema_name" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter cinema name (e.g., IMAX Theater 1, VIP Cinema 2)"
+                        required
+                    >
                 </div>
 
                 <div class="flex justify-end">
@@ -60,6 +80,7 @@ function closeModal() {
 function openModal() {
     document.getElementById('addCustomerModal').classList.remove('hidden');
     document.getElementById('addCustomerModal').classList.add('flex');
+    populateDropdowns();
 }
 
 document.getElementById('addCinemaForm').addEventListener('submit', async function(e) {
@@ -104,6 +125,51 @@ document.getElementById('addCinemaForm').addEventListener('submit', async functi
     }
 });
 
+// Function to populate mall and manager dropdowns
+async function populateDropdowns() {
+    try {
+        // Fetch malls
+        const mallsResponse = await fetch('/MallsManagement/DataTables');
+        const mallsData = await mallsResponse.json();
+        const mallSelect = document.getElementById('mall_select');
+        
+        // Clear existing options except the first one
+        while (mallSelect.options.length > 1) {
+            mallSelect.remove(1);
+        }
+        
+        mallsData.data.forEach(mall => {
+            const option = document.createElement('option');
+            option.value = mall.name;  // Using name as value since CinemasController expects name
+            option.textContent = mall.name;
+            mallSelect.appendChild(option);
+        });
+
+        // Fetch managers
+        const managersResponse = await fetch('/ManagersManagement/DataTables');
+        const managersData = await managersResponse.json();
+        const managerSelect = document.getElementById('manager_select');
+        
+        // Clear existing options except the first one
+        while (managerSelect.options.length > 1) {
+            managerSelect.remove(1);
+        }
+        
+        managersData.data.forEach(manager => {
+            const option = document.createElement('option');
+            option.value = manager.first_name + ' ' + manager.last_name;  // Full name as value
+            option.textContent = manager.first_name + ' ' + manager.last_name;
+            managerSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error loading dropdowns:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load mall and manager data'
+        });
+    }
+}
 
 </script>
 
