@@ -12,11 +12,24 @@ class MovieController extends Controller
         return view ('movies.list');
     }
 
-    public function dataTables ()
+    public function dataTables()
     {
-      $movies = DB::select('SELECT * FROM movies where active = 1');
+        $query = DB::table('movies')
+            ->where('active', 1)
+            ->select([
+                'movie_id',
+                'title',
+                'genre',
+                'duration',
+                'description',
+                'rating',
+                'created_at',
+                'updated_at'
+            ]);
 
-       return DataTables::of($movies)->make(true);
+        return DataTables::of($query)
+            ->addIndexColumn()
+            ->make(true);
     }
 
      public function store(Request $request)

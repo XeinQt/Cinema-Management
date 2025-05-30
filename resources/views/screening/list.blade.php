@@ -77,6 +77,58 @@
             </form>
         </div>
     </div>
+
+    <!-- Edit Screening Modal -->
+    <div id="editScreeningModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-900 p-6 rounded-md w-full max-w-md">
+            <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Edit Screening</h2>
+            <form id="editScreeningForm">
+                @csrf
+                <input type="hidden" name="screening_id" id="edit_screening_id">
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Cinema</label>
+                    <select 
+                        name="cinemaName" 
+                        id="edit_cinema_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Cinema</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Movie</label>
+                    <select 
+                        name="movieName" 
+                        id="edit_movie_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Movie</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label for="edit_screening_time" class="block text-gray-700 dark:text-gray-300 mb-2">Date & Time</label>
+                    <input 
+                        type="datetime-local" 
+                        id="edit_screening_time" 
+                        name="time" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    />
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
 </x-app-layout>
 <script src="{{ asset('js/utils/custom.js') }}"></script>
 <script src="{{ asset('js/screening.js') }}"></script>

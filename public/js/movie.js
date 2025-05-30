@@ -7,7 +7,18 @@ function initializeMovieTable() {
     }
 
     movieTable = $('#movieTable').DataTable({
-        ajax: baseUrl() + '/MoviesManagement/DataTables',
+        ajax: {
+            url: baseUrl() + '/MoviesManagement/DataTables',
+            type: 'GET',
+            error: function(xhr, error, thrown) {
+                console.error('DataTables error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to load movie data. Please try again.'
+                });
+            }
+        },
         processing: true,
         serverSide: true,
         scrollX: true,
@@ -30,63 +41,48 @@ function initializeMovieTable() {
         columnDefs: [
             {
                 targets: 0, // ID column
-                width: '20px',
-                className: 'text-center',
-                render: function(data, type, row) {
-                    if (type === 'display') {
-                        return '<span style="font-size: 0.9em;">' + data + '</span>';
-                    }
-                    return data;
-                }
+                width: '50px',
+                className: 'text-center'
             },
             {
                 targets: 1, // Title column
-                width: '180px'
+                width: '200px'
             },
             {
                 targets: 2, // Genre column
-                width: '100px'
+                width: '120px'
             },
             {
                 targets: 3, // Duration column
-                width: '80px',
+                width: '100px',
                 className: 'text-center'
             },
             {
                 targets: 4, // Description column
-                width: '250px',
+                width: '300px',
                 render: function(data, type, row) {
                     if (type === 'display' && data) {
-                        return data.length > 100 ? data.substr(0, 100) + '...' : data;
+                        return '<div class="description-cell" title="' + data + '">' + 
+                               (data.length > 100 ? data.substr(0, 100) + '...' : data) + 
+                               '</div>';
                     }
                     return data;
                 }
             },
             {
                 targets: 5, // Rating column
-                width: '60px',
+                width: '80px',
                 className: 'text-center'
             },
             {
                 targets: -1, // Actions column (last)
-                width: '110px',
+                width: '150px',
                 className: 'text-center',
                 orderable: false,
-                searchable: false,
-                render: function(data, type, row) {
-                    return `
-                        <div style="white-space: nowrap">
-                            <button class="edit-movie btn btn-primary btn-sm" data-id="${row.movie_id}">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="delete-movie btn btn-danger btn-sm" data-id="${row.movie_id}">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    `;
-                }
+                searchable: false
             }
         ],
+        dom: '<"top"lf>rt<"bottom"ip><"clear">',
         autoWidth: false,
         responsive: true,
         pageLength: 10,
@@ -99,17 +95,67 @@ function initializeMovieTable() {
                 last: "Last",
                 next: "Next",
                 previous: "Previous"
-            }
+            },
+            processing: '<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>'
         },
         drawCallback: function() {
-            // Reinitialize any tooltips or other UI elements here
+            // Add tooltips to description cells
             $('.description-cell').each(function() {
                 if (this.scrollWidth > this.offsetWidth) {
                     $(this).attr('title', $(this).text());
                 }
             });
+        },
+        initComplete: function() {
+            console.log('DataTable initialized successfully');
         }
     });
+
+    // Add custom styling
+    $('head').append(`
+        <style>
+            .dataTables_wrapper .dataTables_length {
+                margin-bottom: 15px;
+            }
+            .dataTables_wrapper .dataTables_filter {
+                margin-bottom: 15px;
+            }
+            #movieTable {
+                width: 100% !important;
+            }
+            #movieTable th, #movieTable td {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .description-cell {
+                max-width: 300px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            #movieTable .btn {
+                padding: 0.25rem 0.5rem;
+                margin: 0 2px;
+            }
+            .dataTables_scrollBody {
+                min-height: 400px;
+            }
+            .spinner-border {
+                display: inline-block;
+                width: 2rem;
+                height: 2rem;
+                vertical-align: text-bottom;
+                border: 0.25em solid currentColor;
+                border-right-color: transparent;
+                border-radius: 50%;
+                animation: spinner-border .75s linear infinite;
+            }
+            @keyframes spinner-border {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    `);
 }
 
 // Handle delete movie

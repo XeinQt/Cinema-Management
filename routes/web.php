@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/ScreeningsManagement/DataTables', [ScreeningController::class, 'dataTables'])->name('screenings.dataTables');
     Route::post('/ScreeningsManagement/create', [ScreeningController::class, 'store'])->name('screenings.store');
     Route::post('/ScreeningsManagement/updateStatus/{id}', [ScreeningController::class, 'updateStatus'])->name('screenings.updateStatus');
+    Route::post('/ScreeningsManagement/update/{id}', [ScreeningController::class, 'update'])->name('screenings.update');
 
     Route::get('/MoviesManagement', [MovieController::class, 'list'])->name('movies');
     Route::get('/MoviesManagement/DataTables', [MovieController::class, 'dataTables'])->name('movies.dataTables');

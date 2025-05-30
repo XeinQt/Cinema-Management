@@ -34,7 +34,19 @@
                         </div>
                     </div>
                     
-                    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="movieTable"></table>
+                    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="movieTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Title</th>
+                                <th>Genre</th>
+                                <th>Duration</th>
+                                <th>Description</th>
+                                <th>Rating</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                    </table>
                 </div>
             </div>
         </div>
