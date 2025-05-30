@@ -13,7 +13,7 @@ class ScreeningController extends Controller
     }
       public function dataTables ()
     {
-        $screening = DB::select('select * from screenings');
+        $screening = DB::select('select * from screenings where active = 1');
         return DataTables::of($screening)->make(true);
     }
 
@@ -71,6 +71,44 @@ class ScreeningController extends Controller
             'success' => true,
             'message' => 'Screening created successfully',
         ]);
+    }
+
+
+    public function updateStatus($id)
+    {
+        try {
+            $screening = DB::select('SELECT * FROM screenings WHERE screening_id = ?', [$id]);
+            
+            if (empty($screening)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Screening not found'
+                ], 404);
+            }
+
+            // Check if screening has any active bookings
+            $activeBookings = DB::select('SELECT * FROM booking WHERE screening_id = ? AND active = 1', [$id]);
+            if (!empty($activeBookings)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot deactivate screening: It has active bookings'
+                ], 422);
+            }
+
+            // Update the active status to 0
+            DB::update('UPDATE screenings SET active = 0 WHERE screening_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Screening has been deactivated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to deactivate screening: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 }

@@ -2,6 +2,165 @@
 .dt-input {
     width: 75px;
 }
-#dt-search-0 {
+.dt-input {
+    width: 150px;
+}
+
+/* DataTables Wrapper */
+.dataTables_wrapper {
+    padding: 20px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Table Design */
+.dataTable {
+    width: 100% !important;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Header Cells */
+.dataTable thead th {
+    background-color: #f8fafc;
+    color: #1f2937;
+    font-weight: 600;
+    padding: 16px;
+    text-align: left;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+/* Body Cells */
+.dataTable tbody td {
+    padding: 14px 16px;
+    color: #4b5563;
+    border-bottom: 1px solid #e5e7eb;
+    background-color: white;
+}
+
+/* Row Hover Effect */
+.dataTable tbody tr:hover td {
+    background-color: #f8fafc;
+}
+
+/* Even Row Background */
+.dataTable tbody tr:nth-child(even) td {
+    background-color: #fafafa;
+}
+
+/* Fixed Column Widths */
+.dataTable th,
+.dataTable td {
+    width: 150px !important;
+    min-width: 150px !important;
+    max-width: 150px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Actions Column */
+.dataTable th:last-child,
+.dataTable td:last-child {
+    width: 200px !important;
+    min-width: 200px !important;
+    max-width: 200px !important;
+}
+
+
+/* Search and Length Controls */
+.dataTables_length,
+.dataTables_filter {
+    margin-bottom: 20px;
+}
+
+.dataTables_length select,
+.dataTables_filter input {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    color: #4b5563;
+    background-color: white;
+    margin: 0 8px;
+}
+
+.dataTables_filter input {
     width: 200px;
+}
+
+.dataTables_length select {
+    width: 80px;
+}
+
+/* Pagination */
+.dataTables_paginate {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 4px;
+}
+
+.paginate_button {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+    color: #4b5563;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.paginate_button:hover {
+    background-color: #f8fafc;
+    border-color: #d1d5db;
+}
+
+.paginate_button.current {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+    color: white;
+}
+
+.paginate_button.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Processing Message */
+.dataTables_processing {
+    background-color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px 24px;
+    color: #4b5563;
+    font-weight: 500;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Info Text */
+.dataTables_info {
+    margin-top: 20px;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dataTables_wrapper {
+        padding: 10px;
+    }
+    
+    .dataTables_length,
+    .dataTables_filter {
+        text-align: left;
+        margin-bottom: 10px;
+    }
+    
+    .dataTables_filter input {
+        width: 100%;
+        margin: 8px 0;
+    }
 }

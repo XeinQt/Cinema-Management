@@ -10,7 +10,19 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     
-                    <button onclick="openModal()" class="bg-green-500 px-5 py-2 rounded-sm text-white">Add</button>
+                    <div class="flex items-center space-x-4 mb-6">
+                        <button onclick="openModal()" class="bg-green-500 hover:bg-green-600 px-5 py-2 rounded-sm text-white">Add</button>
+                        
+                        <div class="flex items-center space-x-2">
+                            <label for="filter" class="text-gray-700 dark:text-gray-300">Filter</label>
+                            <select name="filter" id="filter" class="w-32 px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                <option value="">All</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+                    
                     <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="customerTable"></table>
                 </div>
             </div>
@@ -70,62 +82,71 @@
             </form>
         </div>
     </div>
+
+    {{-- edit modal --}}
+    <div id="editCustomerModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-900 p-6 rounded-md w-full max-w-md">
+            <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Edit Customer</h2>
+            <form id="editCustomerForm">
+                @csrf
+                <input type="hidden" name="customer_id" id="edit_customer_id">
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">First Name</label>
+                    <input 
+                        type="text" 
+                        name="first_name" 
+                        id="edit_first_name"
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter first name (e.g., Juan)"
+                        required
+                    >
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Last Name</label>
+                    <input 
+                        type="text" 
+                        name="last_name" 
+                        id="edit_last_name"
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter last name (e.g., Dela Cruz)"
+                        required
+                    >
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Email</label>
+                    <input 
+                        type="text" 
+                        name="email" 
+                        id="edit_email"
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter email (e.g., juan.delacruz@email.com)"
+                        required
+                    >
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Phone No.</label>
+                    <input 
+                        type="text" 
+                        name="phonenumber" 
+                        id="edit_phonenumber"
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter phone number (e.g., +63 912 345 6789)"
+                        required
+                    >
+                </div>
+                <div class="flex justify-end">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </x-app-layout>
+<script src="{{ asset('js/utils/custom.js') }}"></script>
+<script src="{{ asset('js/customer.js') }}"></script>
 <script>
-    const modal = document.getElementById("addCustomerModal");
-
-    function openModal() {
-        modal.classList.remove("hidden");
-        modal.classList.add("flex");
-    }
-
-    function closeModal() {
-        modal.classList.add("hidden");
-        modal.classList.remove("flex");
-    }
-
-    // AJAX submit
-    document.getElementById("addCustomerForm").addEventListener("submit", async function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(this);
-
-        try {
-            const response = await fetch("{{ route('customers.store') }}", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                    Accept: "application/json",
-                },
-                body: formData,
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: data.message || 'Customer added successfully.'
-                });
-
-                this.reset();
-                closeModal();
-            } else {
-                // Handle validation or duplicate error
-                Swal.fire({
-                    icon: "error",
-                    title: "Oops...",
-                    text: data.message || "Failed to add Customer.",
-                });
-            }
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Unexpected Error",
-                text: "Something went wrong. Please try again.",
-            });
-        }
+    $(document).ready(function() {
+        initializeCustomerTable();
     });
 </script>

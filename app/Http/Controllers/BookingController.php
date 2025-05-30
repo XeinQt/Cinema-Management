@@ -129,4 +129,32 @@ class BookingController extends Controller
             ], 500);
         }
     }
+
+    public function updateStatus($id)
+    {
+        try {
+            $booking = DB::select('SELECT * FROM booking WHERE booking_id = ?', [$id]);
+            
+            if (empty($booking)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Booking not found'
+                ], 404);
+            }
+
+            // Update the active status to 0
+            DB::update('UPDATE booking SET active = 0 WHERE booking_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking has been deactivated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to deactivate booking: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

@@ -14,7 +14,7 @@ class CustomerController extends Controller
 
       public function dataTables ()
     {
-       $customer = DB::SELECT('SELECT * FROM customer');
+       $customer = DB::SELECT('SELECT * FROM customer WHERE active = 1');
        return DataTables::of($customer)->make(true);
     }
 
@@ -59,6 +59,141 @@ class CustomerController extends Controller
         ]);
 
         return response()->json(['message' => 'Customer added successfully']);
+    }
+
+    public function updateStatus($id)
+    {
+        try {
+            $customer = DB::select('SELECT * FROM customer WHERE customer_id = ?', [$id]);
+            
+            if (empty($customer)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer not found'
+                ], 404);
+            }
+
+            // Check if customer has any active bookings
+            $activeBookings = DB::select('SELECT * FROM booking WHERE customer_id = ? AND active = 1', [$id]);
+            if (!empty($activeBookings)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot deactivate customer: It has active bookings'
+                ], 422);
+            }
+
+            // Update the active status to 0
+            DB::update('UPDATE customer SET active = 0 WHERE customer_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer has been deactivated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to deactivate customer: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update($id, Request $request)
+    {
+        try {
+            $request->validate([
+                'first_name' => 'required|string|max:255',
+                'last_name' => 'required|string|max:255',
+                'email' => 'required|string|max:255',
+                'phonenumber' => 'required|string|max:255',
+            ]);
+
+            // Check if manager exists
+            $customer = DB::select('SELECT * FROM customer WHERE customer_id = ?', [$id]);
+            if (empty($customer)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer not found'
+                ], 404);
+            }
+            
+            // Check if another customer has the same details (excluding current customer)
+            $existingCustomer = DB::select('
+                SELECT * FROM customer 
+                WHERE LOWER(first_name) = ? AND LOWER(last_name) = ? AND LOWER(email) = ? AND LOWER(phonenumber) = ? AND customer_id != ?',
+                [
+                    strtolower($request->first_name), 
+                    strtolower($request->last_name), 
+                    strtolower($request->email),
+                    strtolower($request->phonenumber),
+                    $id
+                ]
+            );
+
+            if (!empty($existingCustomer)) {
+                return response()->json([
+                    'message' => 'Another customer with the same details already exists.'
+                ], 422);
+            }
+
+             // Check if another customer has the same email (excluding current customer)
+             $existingCustomerEmail = DB::select('
+                SELECT * FROM customer 
+                WHERE LOWER(email) = ? AND customer_id != ?',
+                [
+                    strtolower($request->email), 
+                    $id
+                ]
+            );
+
+            if (!empty($existingCustomerEmail)) {
+                return response()->json([
+                    'message' => 'Another customer with the same email already exists.'
+                ], 422);
+            }
+
+             // Check if another customer has the same firstname and lastname (excluding current customer)
+             $existingCustomerFnameAndLname = DB::select('
+                SELECT * FROM customer 
+                WHERE LOWER(first_name) = ? AND LOWER(last_name) = ? AND customer_id != ?',
+                [
+                    strtolower($request->first_name), 
+                    strtolower($request->last_name), 
+                    $id
+                ]
+            );
+
+            if (!empty($existingCustomerFnameAndLname)) {
+                return response()->json([
+                    'message' => 'Another customer with the same firstname and lastname already exists.'
+                ], 422);
+            }
+
+            // Update the manager
+            DB::update('
+                UPDATE customer 
+                SET first_name = ?, last_name = ?, email = ?, phonenumber = ?, updated_at = NOW() 
+                WHERE customer_id = ?',
+                [
+                    $request->first_name,
+                    $request->last_name,
+                    $request->email,
+                    $request->phonenumber,
+                    $id
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Customer updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update customer: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 }

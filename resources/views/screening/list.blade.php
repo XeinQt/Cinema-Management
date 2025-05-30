@@ -10,7 +10,18 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                    
-                    <button onclick="openModal()" class="bg-green-500 px-5 py-2 rounded-sm text-white">Add</button>
+                    <div class="flex items-center space-x-4 mb-6">
+                        <button onclick="openModal()" class="bg-green-500 hover:bg-green-600 px-5 py-2 rounded-sm text-white">Add</button>
+                        
+                        <div class="flex items-center space-x-2">
+                            <label for="filter" class="text-gray-700 dark:text-gray-300">Filter</label>
+                            <select name="filter" id="filter" class="w-32 px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                <option value="">All</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
                      <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="screeningTable"></table>
                 </div>
             </div>
@@ -67,108 +78,10 @@
         </div>
     </div>
 </x-app-layout>
+<script src="{{ asset('js/utils/custom.js') }}"></script>
+<script src="{{ asset('js/screening.js') }}"></script>
 <script>
-function closeModal() {
-    document.getElementById('addScreeningModal').classList.remove('flex');
-    document.getElementById('addScreeningModal').classList.add('hidden');
-}
-function openModal() {
-    document.getElementById('addScreeningModal').classList.remove('hidden');
-    document.getElementById('addScreeningModal').classList.add('flex');
-    populateDropdowns();
-}
-
-// Function to populate cinema and movie dropdowns
-async function populateDropdowns() {
-    try {
-        // Fetch cinemas
-        const cinemasResponse = await fetch('/CinemasManagement/DataTables');
-        const cinemasData = await cinemasResponse.json();
-        const cinemaSelect = document.getElementById('cinema_select');
-        
-        // Clear existing options except the first one
-        while (cinemaSelect.options.length > 1) {
-            cinemaSelect.remove(1);
-        }
-        
-        cinemasData.data.forEach(cinema => {
-            const option = document.createElement('option');
-            option.value = cinema.name;  // Using name as value since ScreeningController expects name
-            option.textContent = cinema.name;
-            cinemaSelect.appendChild(option);
-        });
-
-        // Fetch movies
-        const moviesResponse = await fetch('/MoviesManagement/DataTables');
-        const moviesData = await moviesResponse.json();
-        const movieSelect = document.getElementById('movie_select');
-        
-        // Clear existing options except the first one
-        while (movieSelect.options.length > 1) {
-            movieSelect.remove(1);
-        }
-        
-        moviesData.data.forEach(movie => {
-            const option = document.createElement('option');
-            option.value = movie.title;  // Using title as value since ScreeningController expects title
-            option.textContent = movie.title;
-            movieSelect.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error loading dropdowns:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to load cinema and movie data'
-        });
-    }
-}
-
-document.getElementById('addScreeningForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    const form = this;
-    const submitButton = form.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-
-    const formData = new FormData(form);
-
-    try {
-        const res = await fetch("{{ route('screenings.store') }}", {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                "Accept": "application/json",
-            },
-            body: formData,
-        });
-
-        if (!res.ok) {
-            const errData = await res.json();
-            throw errData;
-        }
-
-        const data = await res.json();
-
-        Swal.fire({
-            icon: data.success ? 'success' : 'error',
-            title: data.success ? 'Success' : 'Error',
-            text: data.message
-        });
-
-        if (data.success) {
-            closeModal();
-            form.reset();
-        }
-    } catch (err) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Oops...',
-            text: err.message || 'Something went wrong!'
-        });
-    } finally {
-        submitButton.disabled = false;
-    }
-});
-
+    $(document).ready(function() {
+        initializeScreeningTable();
+    });
 </script>

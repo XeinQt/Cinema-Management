@@ -5,12 +5,30 @@
         </h2>
     </x-slot>
 
+     <!-- Add DataTables CSS -->
+     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css">
+    <!-- Add Custom CSS -->
+    <link rel="stylesheet" href="{{ asset('css/custom.css') }}">
+    
+
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900 dark:text-gray-100">
                     
-                    <button class="bg-green-500 px-5 py-2 rounded-sm text-white">Add</button>
+                    <div class="flex items-center space-x-4 mb-6">
+                        <button onclick="openModal()" class="bg-green-500 hover:bg-green-600 px-5 py-2 rounded-sm text-white">Add</button>
+                        
+                        <div class="flex items-center space-x-2">
+                            <label for="filter" class="text-gray-700 dark:text-gray-300">Filter</label>
+                            <select name="filter" id="filter" class="w-32 px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                <option value="">All</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
                      <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="bookingTable"></table>
 
                 </div>
@@ -106,160 +124,15 @@
 
 </x-app-layout>
 
-{{-- JavaScript Section --}}
+<!-- Scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('js/utils/custom.js') }}"></script>
+<script src="{{ asset('js/booking.js') }}"></script>
 <script>
-    // Modal Element
-    const modal = document.getElementById('addBookingModal');
-
-    // Modal Functions
-    function openModal() {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-
-    function closeModal() {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-
-    // Form Submission
-    document.getElementById('addBooking').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-
-        try {
-            const response = await fetch("{{ route('bookings.store') }}", {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                },
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (response.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: data.message
-                });
-
-                this.reset();
-                closeModal();
-                if (typeof bookingsTable !== 'undefined') {
-                    bookingsTable.ajax.reload();
-                }
-            } else {
-                throw new Error(data.message);
-            }
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message || 'Failed to create booking'
-            });
-        }
+    $(document).ready(function() {
+        initializeBookingTable();
     });
-
-    // Function to populate cinema and movie dropdowns
-    async function populateDropdowns() {
-        try {
-            // Fetch cinemas
-            const cinemasResponse = await fetch('/CinemasManagement/DataTables');
-            const cinemasData = await cinemasResponse.json();
-            const cinemaSelect = document.getElementById('cinema_select');
-            
-            cinemasData.data.forEach(cinema => {
-                const option = document.createElement('option');
-                option.value = cinema.cinema_id;
-                option.textContent = cinema.name;
-                cinemaSelect.appendChild(option);
-            });
-
-            // Fetch movies
-            const moviesResponse = await fetch('/MoviesManagement/DataTables');
-            const moviesData = await moviesResponse.json();
-            const movieSelect = document.getElementById('movie_select');
-            
-            moviesData.data.forEach(movie => {
-                const option = document.createElement('option');
-                option.value = movie.movie_id;
-                option.textContent = movie.title;
-                movieSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error('Error loading dropdowns:', error);
-        }
-    }
-
-    // Call populateDropdowns when opening the modal
-    document.querySelector('button.bg-green-500').addEventListener('click', () => {
-        openModal();
-        populateDropdowns();
-    });
-
-    // Add event listeners for movie and cinema selection
-    document.getElementById('cinema_select').addEventListener('change', fetchScreeningTimes);
-    document.getElementById('movie_select').addEventListener('change', fetchScreeningTimes);
-
-    // Function to fetch and populate screening times
-    async function fetchScreeningTimes() {
-        const cinemaId = document.getElementById('cinema_select').value;
-        const movieId = document.getElementById('movie_select').value;
-        const timeSelect = document.getElementById('screening_time');
-        
-        // Reset and disable time dropdown if either cinema or movie is not selected
-        if (!cinemaId || !movieId) {
-            timeSelect.innerHTML = '<option value="">Select movie and cinema first</option>';
-            timeSelect.disabled = true;
-            return;
-        }
-
-        try {
-            const response = await fetch('/ScreeningsManagement/DataTables');
-            const data = await response.json();
-            
-            // Filter screenings for selected cinema and movie
-            const availableScreenings = data.data.filter(screening => 
-                screening.cinema_id == cinemaId && 
-                screening.movie_id == movieId
-            );
-
-            // Clear and populate time dropdown
-            timeSelect.innerHTML = '<option value="">Select screening time</option>';
-            
-            if (availableScreenings.length === 0) {
-                timeSelect.innerHTML += '<option value="" disabled>No screenings available</option>';
-            } else {
-                availableScreenings.forEach(screening => {
-                    const screeningTime = new Date(screening.screening_time);
-                    const formattedTime = screeningTime.toLocaleString('en-US', {
-                        weekday: 'short',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-                    
-                    timeSelect.innerHTML += `
-                        <option value="${screening.screening_time}">
-                            ${formattedTime}
-                        </option>
-                    `;
-                });
-            }
-            
-            timeSelect.disabled = false;
-        } catch (error) {
-            console.error('Error fetching screening times:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: 'Failed to load screening times'
-            });
-        }
-    }
 </script>
+

@@ -14,7 +14,7 @@ class MovieController extends Controller
 
     public function dataTables ()
     {
-      $movies = DB::select('SELECT * FROM movies');
+      $movies = DB::select('SELECT * FROM movies where active = 1');
 
        return DataTables::of($movies)->make(true);
     }
@@ -51,4 +51,128 @@ class MovieController extends Controller
 
         return response()->json(['message' => 'Movies added successfully']);
     }
+
+    public function updateStatus($id)
+    {
+        try {
+            // Check if manager exists
+            $movie = DB::select('SELECT * FROM movies WHERE movie_id = ?', [$id]);
+            
+            if (empty($movie)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Movie not found'
+                ], 404);
+            }
+
+            // Check if manager is assigned to any active cinemas
+            $activeScreenings = DB::select('SELECT * FROM screenings WHERE movie_id = ? AND active = 1', [$id]);
+            if (!empty($activeScreenings)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot deactivate movie: They are still assigned to active screenings'
+                ], 422);
+            }
+
+            // Update the active status to 0
+            DB::update('UPDATE movies SET active = 0 WHERE movie_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Movie has been deactivated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to deactivate movie: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function update($id, Request $request)
+    {
+        try {
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'genre' => 'required|string|max:255',
+                'duration' => 'required|string|max:255',
+                'description' => 'required|string|max:255',
+                'rating' => 'required',
+            ]);
+
+            // Check if manager exists
+            $movie = DB::select('SELECT * FROM movies WHERE movie_id = ?', [$id]);
+            if (empty($movie)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Movie not found'
+                ], 404);
+            }
+            
+            // Check if another mall has the same details (excluding current mall)
+            $existingMovie = DB::select('
+                SELECT * FROM movies 
+                WHERE LOWER(title) = ? AND LOWER(genre) = ? AND LOWER(duration) = ? AND LOWER(description) = ? AND LOWER(rating) = ? AND movie_id != ?',
+                [
+                    strtolower($request->title), 
+                    strtolower($request->genre), 
+                    strtolower($request->duration),
+                    strtolower($request->description),
+                    strtolower($request->rating),
+                    $id
+                ]
+            );
+
+            if (!empty($existingMovie)) {
+                return response()->json([
+                    'message' => 'Another movie with the same details already exists.'
+                ], 422);
+            }
+
+             // Check if another manager has the same email (excluding current manager)
+             $existingMovieTitle = DB::select('
+                SELECT * FROM movies 
+                WHERE LOWER(title) = ? AND movie_id != ?',
+                [
+                    strtolower($request->title), 
+                    $id
+                ]
+            );
+
+            if (!empty($existingMovieTitle)) {
+                return response()->json([
+                    'message' => 'Another movie with the same title already exists.'
+                ], 422);
+            }
+
+            // Update the movie
+            DB::update('
+                UPDATE movies 
+                SET title = ?, genre = ?, duration = ?, description = ?, rating = ?, updated_at = NOW() 
+                WHERE movie_id = ?',
+                [
+                    $request->title,
+                    $request->genre,
+                    $request->duration,
+                    $request->description,
+                    $request->rating,
+                    $id
+                ]
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Movie updated successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update movie: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
 }
