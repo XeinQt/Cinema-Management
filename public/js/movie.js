@@ -6,21 +6,20 @@ function initializeMovieTable(filter = "") {
     currentFilter = filter;
 
     // Destroy existing DataTable if it exists
-    if ($.fn.DataTable.isDataTable("#movieTable")) {
+    if ($.fn.DataTable.isDataTable("#moviesDatatables")) {
         console.log("Destroying existing DataTable");
-        $("#movieTable").DataTable().destroy();
+        $("#moviesDatatables").DataTable().destroy();
     }
 
     console.log("Creating new DataTable instance");
     console.log("AJAX URL:", baseUrl() + "/MoviesManagement/DataTables");
 
-    movieTable = $("#movieTable").DataTable({
+    movieTable = $("#moviesDatatables").DataTable({
         ajax: {
-            url: "/MoviesManagement/DataTables",
+            url: baseUrl() + "/MoviesManagement/DataTables",
             type: "GET",
             data: function (d) {
                 d.filter = filter;
-                return d;
             },
             dataSrc: function (json) {
                 return json.data;
@@ -35,161 +34,72 @@ function initializeMovieTable(filter = "") {
         },
         processing: true,
         serverSide: true,
-        scrollX: true,
         autoWidth: false,
         columns: [
             {
                 data: "movie_id",
                 name: "movie_id",
-                title: "ID",
-                width: "50px",
-                searchable: true,
-                orderable: true
+                title: "Movie ID",
+                width: "10px",
             },
-            { data: "title", name: "title", title: "Title", width: "150px" },
-            { data: "genre", name: "genre", title: "Genre", width: "120px" },
+            {
+                data: "title",
+                name: "title",
+                title: "Title",
+                width: "50px",
+            },
+            {
+                data: "genre",
+                name: "genre",
+                title: "Genre",
+                width: "50px",
+            },
             {
                 data: "duration",
                 name: "duration",
-                title: "Duration",
-                width: "100px",
+                title: "Duration (mins)",
+                width: "40px",
+            },
+            {
+                data: "rating",
+                name: "rating",
+                title: "Rating",
+                width: "20px",
             },
             {
                 data: "description",
                 name: "description",
                 title: "Description",
-                width: "250px",
+                width: "150px",
+                render: function (data) {
+                    return `<div class="max-w-[200px] overflow-hidden whitespace-nowrap text-ellipsis" title="${data}">${data}</div>`;
+                },
             },
-            { data: "rating", name: "rating", title: "Rating", width: "80px" },
             {
                 data: "active",
                 name: "active",
                 title: "Status",
-                width: "100px",
+                width: "10px",
                 render: function (data) {
                     return data == 1
                         ? '<span class="px-2 py-1 bg-green-500 text-white rounded-full text-sm">Active</span>'
                         : '<span class="px-2 py-1 bg-red-500 text-white rounded-full text-sm">Inactive</span>';
-                }
-            },
-            {
-                data: null,
-                name: "actions",
-                title: "Actions",
-                width: "200px",
-                orderable: false,
-                searchable: false,
-                render: function (data, type, row) {
-                    if (type === "display") {
-                        let buttons = "";
-
-                        // Edit button - show for both active and inactive
-                        buttons += `<button class="edit-movie bg-blue-500 text-white px-2 py-1 rounded mr-2" data-id="${row.movie_id}">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>`;
-
-                        // Show different buttons based on active status
-                        if (row.active == 1) {
-                            buttons += `<button class="delete-movie bg-red-500 text-white px-2 py-1 rounded" data-id="${row.movie_id}">
-                                <i class="fas fa-trash"></i> Deactivate
-                            </button>`;
-                        } else {
-                            buttons += `<button class="restore-movie bg-green-500 text-white px-2 py-1 rounded" data-id="${row.movie_id}">
-                                <i class="fas fa-undo"></i> Restore
-                            </button>`;
-                        }
-
-                        return buttons;
-                    }
-                    return "";
                 },
             },
+            {
+                data: "action",
+                name: "action",
+                title: "Actions",
+                orderable: false,
+                searchable: false,
+                width: "5px",
+            },
         ],
-        // columnDefs: [
-        //     {
-        //         targets: '_all',
-        //         className: 'text-left'
-        //     },
-        //     {
-        //         targets: [6, 7], // Status and Actions columns
-        //         className: 'text-center'
-        //     }
-        // ],
-        dom: '<"top"lf>rt<"bottom"ip><"clear">',
-        language: {
-            processing:
-                '<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>',
-        },
+        order: [[0, "desc"]],
         drawCallback: function () {
-            // Add tooltips to description cells if needed
-            $(".description-cell").each(function () {
-                if (this.scrollWidth > this.offsetWidth) {
-                    $(this).attr("title", $(this).text());
-                }
-            });
+            document.getElementById("filter").value = currentFilter;
         },
     });
-
-    // Add custom styling
-    $("head").append(`
-        <style>
-            .dataTables_wrapper .dataTables_length {
-                margin-bottom: 15px;
-            }
-            .dataTables_wrapper .dataTables_filter {
-                margin-bottom: 15px;
-            }
-            #movieTable {
-                width: 100% !important;
-            }
-            #movieTable th {
-                background-color: #f9fafb;
-                color: #6b7280;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                padding: 12px 24px;
-                border-bottom: 1px solid #e5e7eb;
-            }
-            #movieTable td {
-                padding: 12px 24px;
-                border-bottom: 1px solid #e5e7eb;
-            }
-            .description-cell {
-                max-width: 300px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-            #movieTable .btn {
-                padding: 0.25rem 0.5rem;
-                margin: 0 2px;
-            }
-            .dataTables_scrollBody {
-                min-height: 400px;
-            }
-            /* Custom header styling */
-            .dt-head-center {
-                text-align: center !important;
-            }
-            table.dataTable thead th {
-                position: relative;
-                text-align: left;
-                vertical-align: middle;
-                padding: 12px 24px;
-                border-bottom: 2px solid #e5e7eb;
-            }
-            table.dataTable thead th.sorting:after,
-            table.dataTable thead th.sorting_asc:after,
-            table.dataTable thead th.sorting_desc:after {
-                position: absolute;
-                right: 8px;
-                top: 50%;
-                transform: translateY(-50%);
-                opacity: 0.5;
-            }
-        </style>
-    `);
 }
 
 // Handle filter change
@@ -197,9 +107,74 @@ document.getElementById("filter").addEventListener("change", function () {
     initializeMovieTable(this.value);
 });
 
+// Handle delete movie
+$(document).on("click", ".delete-movie", function () {
+    const movieId = $(this).attr("data-id");
+    if (!movieId) {
+        console.error("Movie ID not found");
+        return;
+    }
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "This movie will be deactivated!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, deactivate it!",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            updateMovieStatus(movieId);
+        }
+    });
+});
+
+// Function to update movie status
+async function updateMovieStatus(movieId) {
+    try {
+        console.log("Updating movie status for ID:", movieId); // Debug log
+        const url = `${baseUrl()}/MoviesManagement/updateStatus/${movieId}`;
+        console.log("Request URL:", url); // Debug log
+
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                Accept: "application/json",
+                "Content-Type": "application/json",
+            },
+        });
+
+        console.log("Response status:", response.status); // Debug log
+        const data = await response.json();
+        console.log("Response data:", data); // Debug log
+
+        if (data.success) {
+            Swal.fire("Deactivated!", data.message, "success");
+            if (movieTable) {
+                movieTable.ajax.reload(null, false);
+            }
+        } else {
+            throw new Error(data.message || "Failed to update movie status");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        Swal.fire(
+            "Error!",
+            error.message || "Failed to update movie status",
+            "error"
+        );
+    }
+}
+
 // Handle restore movie
 $(document).on("click", ".restore-movie", function () {
-    const movieId = $(this).data("id");
+    const movieId = $(this).attr("data-id");
+    if (!movieId) {
+        console.error("Movie ID not found");
+        return;
+    }
 
     Swal.fire({
         title: "Restore Movie?",
@@ -237,7 +212,6 @@ async function restoreMovieStatus(movieId) {
 
         if (data.success) {
             Swal.fire("Restored!", data.message, "success");
-            // Reload the DataTable to reflect the changes
             if (movieTable) {
                 movieTable.ajax.reload(null, false);
             }
@@ -254,62 +228,29 @@ async function restoreMovieStatus(movieId) {
     }
 }
 
-// Handle delete movie
-$(document).on("click", ".delete-movie", function () {
-    const movieId = $(this).data("id");
-
-    Swal.fire({
-        title: "Are you sure?",
-        text: "This movie will be deactivated!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#3085d6",
-        cancelButtonColor: "#d33",
-        confirmButtonText: "Yes, deactivate it!",
-    }).then((result) => {
-        if (result.isConfirmed) {
-            updateMovieStatus(movieId);
-        }
-    });
-});
-
-// Function to update movie status
-async function updateMovieStatus(movieId) {
-    try {
-        const response = await fetch(
-            `${baseUrl()}/MoviesManagement/updateStatus/${movieId}`,
-            {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector(
-                        'meta[name="csrf-token"]'
-                    ).content,
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                },
-            }
-        );
-
-        const data = await response.json();
-
-        if (data.success) {
-            Swal.fire("Deactivated!", data.message, "success");
-            // Reload the DataTable to reflect the changes
-            if (movieTable) {
-                movieTable.ajax.reload(null, false);
-            }
-        } else {
-            throw new Error(data.message);
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        Swal.fire(
-            "Error!",
-            error.message || "Failed to update movie status",
-            "error"
-        );
+// Handle edit movie
+$(document).on("click", ".edit-movie", function () {
+    const movieId = $(this).attr("data-id");
+    if (!movieId) {
+        console.error("Movie ID not found");
+        return;
     }
-}
+
+    const row = movieTable.row($(this).closest("tr")).data();
+    console.log("Row data:", row); // Debug log
+
+    // Populate the edit form
+    document.getElementById("edit_movie_id").value = movieId;
+    document.getElementById("edit_title").value = row.title;
+    document.getElementById("edit_genre").value = row.genre;
+    document.getElementById("edit_duration").value = row.duration;
+    console.log("Duration value:", row.duration); // Debug log
+    document.getElementById("edit_description").value = row.description;
+    document.getElementById("edit_rating").value = row.rating;
+
+    // Open the edit modal
+    openEditModal();
+});
 
 // Modal Functions
 function openModal() {
@@ -324,8 +265,21 @@ function closeModal() {
     modal.classList.remove("flex");
 }
 
+function openEditModal() {
+    const modal = document.getElementById("editMovieModal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+function closeEditModal() {
+    const modal = document.getElementById("editMovieModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
+
 // Initialize form submission
 document.addEventListener("DOMContentLoaded", function () {
+    // Add Movie Form Submission
     document
         .getElementById("addMovieForm")
         ?.addEventListener("submit", async function (e) {
@@ -360,7 +314,6 @@ document.addEventListener("DOMContentLoaded", function () {
                     this.reset();
                     closeModal();
 
-                    // Refresh the table after adding a movie
                     if (movieTable) {
                         movieTable.ajax.reload(null, false);
                     }
@@ -372,7 +325,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 }
             } catch (error) {
-                console.error("Fetch Error:", error);
+                console.error("Error:", error);
                 Swal.fire({
                     icon: "error",
                     title: "Unexpected Error",
@@ -380,23 +333,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             }
         });
-});
 
-//kuhaon ang value sa modal
-function openEditModal() {
-    const modal = document.getElementById("editMovieModal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-}
-
-function closeEditModal() {
-    const modal = document.getElementById("editMovieModal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-}
-
-// Edit Movie Form
-document.addEventListener("DOMContentLoaded", function () {
+    // Edit Movie Form Submission
     document
         .getElementById("editMovieForm")
         ?.addEventListener("submit", async function (e) {
@@ -407,7 +345,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const response = await fetch(
-                    `${baseUrl()}/MoviesManagement/update/${movieId}`,
+                    baseUrl() + `/MoviesManagement/update/${movieId}`,
                     {
                         method: "POST",
                         headers: {
@@ -435,44 +373,22 @@ document.addEventListener("DOMContentLoaded", function () {
                         movieTable.ajax.reload(null, false);
                     }
                 } else {
-                    let errorMessage = data.message || "Failed to update Movie.";
-                    if (data.errors) {
-                        errorMessage = Object.values(data.errors)
-                            .flat()
-                            .join("\n");
-                    }
                     Swal.fire({
                         icon: "error",
-                        title: "Error",
-                        text: errorMessage,
+                        title: "Oops...",
+                        text: data.message || "Failed to update Movie.",
                     });
                 }
             } catch (error) {
-                console.error("Fetch Error:", error);
+                console.error("Error:", error);
                 Swal.fire({
                     icon: "error",
                     title: "Unexpected Error",
-                    text: "Network error or server is not responding. Please try again.",
+                    text: "Something went wrong. Please try again.",
                 });
             }
         });
-});
 
-// Handle edit button click
-$(document).on("click", ".edit-movie", function () {
-    const movieId = $(this).data("id");
-    const row = movieTable.row($(this).closest("tr")).data();
-    console.log("Edit movie clicked. Movie ID:", movieId);
-    console.log("Row data:", row);
-
-    // Populate the edit form
-    document.getElementById("edit_movie_id").value = movieId;
-    document.getElementById("edit_title").value = row.title;
-    document.getElementById("edit_genre").value = row.genre;
-    document.getElementById("edit_duration").value = row.duration;
-    document.getElementById("edit_description").value = row.description;
-    document.getElementById("edit_rating").value = row.rating;
-
-    // Open the edit modal
-    openEditModal();
+    // Initialize the table
+    initializeMovieTable();
 });

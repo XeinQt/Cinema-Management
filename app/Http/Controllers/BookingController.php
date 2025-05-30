@@ -13,160 +13,160 @@ class BookingController extends Controller
         return view('bookings.list');
     }
 
-    public function dataTables(Request $request) {
-        $filter = $request->input('filter', '');
-        $status_filter = $request->input('status_filter', '');
-        
-        $query = 'SELECT 
-                b.*,
-                CONCAT(c.first_name, " ", c.last_name) as customer_name,
-                cin.name as cinema_name,
-                cin.cinema_id,
-                m.title as movie_title,
-                m.movie_id,
-                s.screening_time,
-                s.screening_id
-            FROM booking b
-            JOIN customer c ON b.customer_id = c.customer_id AND c.active = 1
-            JOIN screenings s ON b.screening_id = s.screening_id AND s.active = 1
-            JOIN cinemas cin ON s.cinema_id = cin.cinema_id AND cin.active = 1
-            JOIN movies m ON s.movie_id = m.movie_id AND m.active = 1
-            WHERE 1=1';
+    public function dataTables(Request $request)
+    {
+        try {
+            $activeFilter = $request->input('active_filter', '');
+            $statusFilter = $request->input('status_filter', '');
+            
+            // Create base query with explicit column selection and proper quotes
+            $query = DB::table('booking as b')
+                ->join('customer as c', 'b.customer_id', '=', 'c.customer_id')
+                ->join('screenings as s', 'b.screening_id', '=', 's.screening_id')
+                ->select([
+                    DB::raw('b.booking_id as booking_id'),
+                    DB::raw('b.customer_id as customer_id'),
+                    DB::raw('b.screening_id as screening_id'),
+                    DB::raw('CONCAT(c.first_name, " ", c.last_name) as customer_name'),
+                    DB::raw('b.set_number as seats'),
+                    DB::raw('b.status as status'),
+                    DB::raw('b.active as active'),
+                    DB::raw('b.created_at as created_at'),
+                    DB::raw('b.updated_at as updated_at'),
+                    DB::raw('s.screening_time as screening_time')
+                ]);
+            
+            // Apply active/inactive filter
+            if ($activeFilter === 'active') {
+                $query->where('b.active', '=', 1);
+            } elseif ($activeFilter === 'inactive') {
+                $query->where('b.active', '=', 0);
+            }
 
-        // Apply active/inactive filter
-        if ($filter === '1') {
-            $query .= ' AND b.active = 1';
-        } elseif ($filter === '0') {
-            $query .= ' AND b.active = 0';
+            // Apply status filter
+            if ($statusFilter === 'confirmed' || $statusFilter === 'cancelled') {
+                $query->where('b.status', '=', $statusFilter);
+            }
+
+            // Enable query logging for debugging
+            \DB::enableQueryLog();
+            
+            $result = DataTables::of($query)
+                ->addColumn('action', function($row) {
+                    $buttons = '';
+                    
+                    if ($row->active == 1) {
+                        $buttons .= '<i class="fas fa-edit edit-booking cursor-pointer mx-1" data-id="'.$row->booking_id.'"></i>';
+                        $buttons .= '<i class="fas fa-trash delete-booking cursor-pointer mx-1" data-id="'.$row->booking_id.'"></i>';
+                    } else {
+                        $buttons .= '<i class="fas fa-undo restore-booking cursor-pointer mx-1" data-id="'.$row->booking_id.'"></i>';
+                    }
+                    
+                    return $buttons;
+                })
+                ->editColumn('screening_time', function($row) {
+                    return $row->screening_time ? date('Y-m-d H:i:s', strtotime($row->screening_time)) : '';
+                })
+                ->editColumn('active', function($row) {
+                    return $row->active == 1 ? 'Active' : 'Inactive';
+                })
+                ->rawColumns(['action'])
+                ->make(true);
+
+            // Log the actual query that was executed
+            \Log::info('Executed query:', \DB::getQueryLog());
+            
+            return $result;
+
+        } catch (\Exception $e) {
+            \Log::error('DataTables Error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'last_query' => \DB::getQueryLog()
+            ]);
+            
+            return response()->json([
+                'error' => true,
+                'message' => 'Error loading bookings: ' . $e->getMessage()
+            ], 500);
         }
-
-        // Apply status filter
-        if ($status_filter) {
-            $query .= ' AND LOWER(b.status) = LOWER(?)';
-        }
-
-        $query .= ' ORDER BY b.booking_id DESC';
-
-        // Execute query with or without status parameter
-        $bookings = $status_filter ? 
-            DB::select($query, [$status_filter]) : 
-            DB::select($query);
-
-        return DataTables::of($bookings)->make(true);
     }
 
     public function store(Request $request)
     {
-        try {
-            // Basic request validation
-            $request->validate([
-                'customer_full_name' => 'required|string|max:255',
-                'cinema_select' => 'required|numeric',
-                'movie_select' => 'required|numeric',
-                'time' => 'required|numeric', // Changed to numeric as we're receiving screening_id
-                'seat_number' => 'required|string|max:10',
-                'status' => 'required|in:confirmed,pending,cancelled'
-            ]);
+        $request->validate([
+            'customer_id' => 'required|exists:customer,customer_id',
+            'screening_id' => 'required|exists:screenings,screening_id',
+            'set_number' => 'required|string|max:255',
+        ]);
 
-            // 1. Get customer ID from full name
-            $nameParts = explode(' ', trim($request->customer_full_name));
-            if (count($nameParts) < 2) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Please provide both first and last name'
-                ], 400);
-            }
+        // Check if screening is active
+        $screening = DB::select('
+            SELECT * FROM screenings 
+            WHERE screening_id = ? AND active = 1', 
+            [$request->screening_id]
+        );
 
-            $firstName = $nameParts[0];
-            $lastName = end($nameParts);
-
-            $customer = DB::select("
-                SELECT customer_id 
-                FROM customer
-                WHERE LOWER(first_name) = LOWER(?) 
-                AND LOWER(last_name) = LOWER(?)", 
-                [$firstName, $lastName]
-            );
-
-            if (empty($customer)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Customer not found. Please register the customer first.'
-                ], 404);
-            }
-
-            // 2. Verify screening exists and is active
-            $screening = DB::select("
-                SELECT screening_id 
-                FROM screenings 
-                WHERE screening_id = ? 
-                AND active = 1", 
-                [$request->time] // time field now contains screening_id
-            );
-
-            if (empty($screening)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Invalid or inactive screening selected.'
-                ], 404);
-            }
-
-            // 3. Check if seat is available
-            $existingBooking = DB::select("
-                SELECT booking_id 
-                FROM booking
-                WHERE screening_id = ? 
-                AND set_number = ? 
-                AND status != 'cancelled'", 
-                [
-                    $screening[0]->screening_id,
-                    $request->seat_number
-                ]
-            );
-
-            if (!empty($existingBooking)) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'This seat is already booked.'
-                ], 400);
-            }
-
-            // 4. Save booking
-            DB::insert("
-                INSERT INTO booking (
-                    customer_id, 
-                    screening_id, 
-                    set_number, 
-                    status, 
-                    active,
-                    created_at, 
-                    updated_at
-                ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())", 
-                [
-                    $customer[0]->customer_id,
-                    $screening[0]->screening_id,
-                    $request->seat_number,
-                    $request->status,
-                    1
-                ]
-            );
-
+        if (empty($screening)) {
             return response()->json([
-                'success' => true,
-                'message' => 'Booking created successfully'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to create booking: ' . $e->getMessage()
-            ], 500);
+                'success' => false,
+                'message' => 'Selected screening is not active.'
+            ], 422);
         }
+
+        // Check if customer is active
+        $customer = DB::select('
+            SELECT * FROM customer 
+            WHERE customer_id = ? AND active = 1', 
+            [$request->customer_id]
+        );
+
+        if (empty($customer)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Selected customer is not active.'
+            ], 422);
+        }
+
+        // Check if booking with same customer and screening exists
+        $existingBooking = DB::select('
+            SELECT * FROM booking 
+            WHERE customer_id = ? AND screening_id = ? AND active = 1', 
+            [$request->customer_id, $request->screening_id]
+        );
+
+        if (!empty($existingBooking)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'A booking already exists for this customer and screening.'
+            ], 422);
+        }
+
+        // Insert new booking
+        DB::insert('
+            INSERT INTO booking (customer_id, screening_id, set_number, status, active, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)', 
+            [
+                $request->customer_id,
+                $request->screening_id,
+                $request->set_number,
+                'confirmed',   // or whatever default status you want
+                1,
+                now(),         // PHP's current timestamp
+                now()
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Booking added successfully'
+        ]);
     }
 
     public function updateStatus($id)
     {
         try {
+            // Check if booking exists
             $booking = DB::select('SELECT * FROM booking WHERE booking_id = ?', [$id]);
             
             if (empty($booking)) {
@@ -177,7 +177,7 @@ class BookingController extends Controller
             }
 
             // Update the active status to 0
-            DB::update('UPDATE booking SET active = 0 WHERE booking_id = ?', [$id]);
+            DB::update('UPDATE booking SET active = 0, updated_at = NOW() WHERE booking_id = ?', [$id]);
 
             return response()->json([
                 'success' => true,
@@ -195,120 +195,118 @@ class BookingController extends Controller
     public function update($id, Request $request)
     {
         try {
-            // Basic request validation
-            $request->validate([
-                'customer_full_name' => 'required|string|max:255',
-                'cinema_select' => 'required|numeric',
-                'movie_select' => 'required|numeric',
-                'time' => 'required|numeric', // This is now screening_id
-                'seat_number' => 'required|string|max:10',
-                'status' => 'required|in:confirmed,pending,cancelled'
+            // Validate the request
+            $validated = $request->validate([
+                'customer_id' => 'required|exists:customer,customer_id',
+                'screening_id' => 'required|exists:screenings,screening_id',
+                'set_number' => 'required|string|max:255',
+                'status' => 'required|string|in:confirmed,cancelled'
             ]);
 
-            return DB::transaction(function () use ($request, $id) {
-                // Check if booking exists
-                $booking = DB::select('SELECT * FROM booking WHERE booking_id = ?', [$id]);
-                if (empty($booking)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Booking not found'
-                    ], 404);
-                }
+            // Get current booking
+            $currentBooking = DB::select('SELECT * FROM booking WHERE booking_id = ?', [$id]);
+            if (empty($currentBooking)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Booking not found'
+                ], 404);
+            }
 
-                // Get customer ID from full name
-                $nameParts = explode(' ', trim($request->customer_full_name));
-                if (count($nameParts) < 2) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Please provide both first and last name'
-                    ], 400);
-                }
+            $currentBooking = $currentBooking[0];
 
-                $firstName = $nameParts[0];
-                $lastName = end($nameParts);
+            // Check if any data is actually changing
+            if ($currentBooking->customer_id == $validated['customer_id'] && 
+                $currentBooking->screening_id == $validated['screening_id'] && 
+                $currentBooking->set_number == $validated['set_number'] &&
+                $currentBooking->status == $validated['status']) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No changes were made to the booking.'
+                ]);
+            }
 
-                $customer = DB::select("
-                    SELECT customer_id 
-                    FROM customer 
-                    WHERE LOWER(first_name) = LOWER(?) 
-                    AND LOWER(last_name) = LOWER(?)", 
-                    [$firstName, $lastName]
-                );
+            // Check if screening is active
+            $screening = DB::select('
+                SELECT * FROM screenings 
+                WHERE screening_id = ? AND active = 1', 
+                [$validated['screening_id']]
+            );
 
-                if (empty($customer)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Customer not found. Please register the customer first.'
-                    ], 404);
-                }
+            if (empty($screening)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected screening is not active.'
+                ], 422);
+            }
 
-                // Check if screening exists
-                $screening = DB::select('
-                    SELECT * FROM screenings 
-                    WHERE screening_id = ? 
-                    AND cinema_id = ? 
-                    AND movie_id = ? 
-                    AND active = 1', 
-                    [
-                        $request->time, // This is screening_id
-                        $request->cinema_select, // This is cinema_id
-                        $request->movie_select  // This is movie_id
-                    ]
-                );
+            // Check if customer is active
+            $customer = DB::select('
+                SELECT * FROM customer 
+                WHERE customer_id = ? AND active = 1', 
+                [$validated['customer_id']]
+            );
 
-                if (empty($screening)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid screening selection'
-                    ], 404);
-                }
+            if (empty($customer)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Selected customer is not active.'
+                ], 422);
+            }
 
-                // Check if seat is available (excluding current booking)
+            // Check if another booking exists with same customer and screening (excluding current booking)
+            if ($currentBooking->customer_id != $validated['customer_id'] || 
+                $currentBooking->screening_id != $validated['screening_id']) {
+                
                 $existingBooking = DB::select('
-                    SELECT booking_id 
-                    FROM booking 
-                    WHERE screening_id = ? 
-                    AND set_number = ? 
-                    AND booking_id != ? 
-                    AND status != ?', 
+                    SELECT * FROM booking 
+                    WHERE customer_id = ? 
+                    AND screening_id = ? 
+                    AND active = 1 
+                    AND booking_id != ?',
                     [
-                        $screening[0]->screening_id,
-                        $request->seat_number,
-                        $id,
-                        'cancelled'
+                        $validated['customer_id'],
+                        $validated['screening_id'],
+                        $id
                     ]
                 );
 
                 if (!empty($existingBooking)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'This seat is already booked'
-                    ], 400);
+                        'message' => 'Another booking already exists for this customer and screening.'
+                    ], 422);
                 }
+            }
 
-                // Update the booking
-                DB::update('
-                    UPDATE booking 
-                    SET customer_id = ?, 
-                        screening_id = ?, 
-                        set_number = ?, 
-                        status = ?, 
-                        updated_at = NOW() 
-                    WHERE booking_id = ?',
-                    [
-                        $customer[0]->customer_id,
-                        $screening[0]->screening_id,
-                        $request->seat_number,
-                        $request->status,
-                        $id
-                    ]
-                );
+            // Update the booking
+            DB::update('
+                UPDATE booking 
+                SET customer_id = ?, 
+                    screening_id = ?, 
+                    set_number = ?,
+                    status = ?, 
+                    updated_at = NOW() 
+                WHERE booking_id = ?',
+                [
+                    $validated['customer_id'],
+                    $validated['screening_id'],
+                    $validated['set_number'],
+                    $validated['status'],
+                    $id
+                ]
+            );
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Booking updated successfully'
-                ]);
-            });
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking updated successfully'
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -330,8 +328,45 @@ class BookingController extends Controller
                 ], 404);
             }
 
-            // Update the active status to 1
-            DB::update('UPDATE booking SET active = 1 WHERE booking_id = ?', [$id]);
+            $booking = $booking[0];
+
+            // Check if the associated screening is still active
+            $screening = DB::select('
+                SELECT s.* FROM screenings s
+                WHERE s.screening_id = ? AND s.active = 1',
+                [$booking->screening_id]
+            );
+
+            if (empty($screening)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot restore booking: Associated screening is not active'
+                ], 422);
+            }
+
+            // Check if the associated customer is still active
+            $customer = DB::select('
+                SELECT c.* FROM customer c
+                WHERE c.customer_id = ? AND c.active = 1',
+                [$booking->customer_id]
+            );
+
+            if (empty($customer)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot restore booking: Associated customer is not active'
+                ], 422);
+            }
+
+            // Update the active status to 1 and set status back to confirmed
+            DB::update('
+                UPDATE booking 
+                SET active = 1, 
+                    status = "confirmed",
+                    updated_at = NOW() 
+                WHERE booking_id = ?', 
+                [$id]
+            );
 
             return response()->json([
                 'success' => true,

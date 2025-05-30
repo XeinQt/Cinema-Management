@@ -2,7 +2,7 @@
     {{-- Header Section --}}
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Movie Management') }}
+            {{ __('Movies Management') }}
         </h2>
     </x-slot>
      <!-- Add DataTables CSS -->
@@ -34,20 +34,7 @@
                         </div>
                     </div>
                     
-                    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="movieTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Title</th>
-                                <th>Genre</th>
-                                <th>Duration</th>
-                                <th>Description</th>
-                                <th>Rating</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                    </table>
+                    <table class="w-full bg-white shadow-md rounded-lg overflow-hidden" id="moviesDatatables"></table>
                 </div>
             </div>
         </div>
@@ -62,7 +49,7 @@
                 @csrf
                 {{-- Movie Title --}}
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Title</label>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Title</label>
                     <input 
                         type="text" 
                         name="title" 
@@ -79,20 +66,21 @@
                         type="text" 
                         name="genre" 
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter genre"
+                        placeholder="Enter movie genre"
                         required
                     >
                 </div>
 
                 {{-- Movie Duration --}}
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Duration</label>
+                    <label class="block text-gray-700 dark:text-gray-300">Duration (minutes)</label>
                     <input 
                         type="text" 
                         name="duration" 
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter duration (e.g. 2h 30m)"
+                        placeholder="Enter duration in minutes"
                         required
+                        min="1"
                     >
                 </div>
 
@@ -103,6 +91,7 @@
                         name="description" 
                         class="w-full px-3 py-2 border rounded" 
                         placeholder="Enter movie description"
+                        rows="3"
                         required
                     ></textarea>
                 </div>
@@ -114,7 +103,7 @@
                         type="text" 
                         name="rating" 
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter rating (e.g. PG-13)"
+                        placeholder="Enter movie rating"
                         required
                     >
                 </div>
@@ -136,15 +125,15 @@
             <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Edit Movie</h2>
             <form id="editMovieForm">
                 @csrf
-                <input type="hidden" name="movie_id" id="edit_movie_id">
+                <input type="hidden" id="edit_movie_id" name="movie_id">
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Title</label>
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Title</label>
                     <input 
                         type="text" 
                         name="title" 
                         id="edit_title"
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter title (e.g., The Dark Knight)"
+                        placeholder="Enter movie title"
                         required
                     >
                 </div>
@@ -155,31 +144,32 @@
                         name="genre" 
                         id="edit_genre"
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter genre (e.g., Action)"
+                        placeholder="Enter movie genre"
                         required
                     >
                 </div>
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Duration</label>
+                    <label class="block text-gray-700 dark:text-gray-300">Duration (minutes)</label>
                     <input 
                         type="text" 
                         name="duration" 
                         id="edit_duration"
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter duration (e.g., 2h 30m)"
+                        placeholder="Enter duration in minutes"
                         required
+                        min="1"
                     >
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Description</label>
-                    <input 
-                        type="text" 
+                    <textarea 
                         name="description" 
                         id="edit_description"
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter description"
+                        placeholder="Enter movie description"
+                        rows="3"
                         required
-                    >
+                    ></textarea>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Rating</label>
@@ -188,7 +178,7 @@
                         name="rating" 
                         id="edit_rating"
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter rating (e.g., PG-13)"
+                        placeholder="Enter movie rating"
                         required
                     >
                 </div>

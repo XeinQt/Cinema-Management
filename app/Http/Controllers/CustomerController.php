@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 class CustomerController extends Controller
 {
     public function list() {
-
         return view('customer.list');
     }
 
@@ -16,16 +15,33 @@ class CustomerController extends Controller
     {
         $filter = $request->input('filter', '');
         
-        $query = DB::table('customer');
-
+        $query = 'SELECT * FROM customer';
+        
         // Apply filter
         if ($filter === 'active') {
-            $query->where('active', 1);
+            $query .= ' WHERE active = 1';
         } elseif ($filter === 'inactive') {
-            $query->where('active', 0);
+            $query .= ' WHERE active = 0';
         }
-
-        return DataTables::of($query)->make(true);
+        
+        $query .= ' ORDER BY customer_id DESC';
+        
+        $customers = DB::select($query);
+        return DataTables::of($customers)
+            ->addColumn('action', function($row) {
+                $buttons = '';
+                
+                if ($row->active == 1) {
+                    $buttons .= '<i class="fas fa-edit edit-customer" data-id="'.$row->customer_id.'"></i>';
+                    $buttons .= '<i class="fas fa-trash delete-customer" data-id="'.$row->customer_id.'"></i>';
+                } else {
+                    $buttons .= '<i class="fas fa-undo restore-customer" data-id="'.$row->customer_id.'"></i>';
+                }
+                
+                return $buttons;
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
     public function store(Request $request)
@@ -34,30 +50,33 @@ class CustomerController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|string|max:255',
-             'phonenumber' => 'required|string|max:255',
+            'phonenumber' => 'required|string|max:255',
         ]);
 
-        $existingCustomer = DB::table('customer')
+        $existingCustomers = DB::table('customer')
             ->whereRaw('LOWER(email) = ?', [strtolower($request->email)])
             ->exists();
 
-        if ($existingCustomer) {
+        if ($existingCustomers) {
             return response()->json([
                 'message' => 'Email already exists.'
             ], 422);
         }
 
-        $existingCustomerFnameAndLname = DB::table('customer')
-        ->whereRaw('LOWER(first_name) = ? AND LOWER(last_name) = ?', [strtolower($request->first_name), strtolower($request->last_name)])
-        ->exists();
+        // Check if customer with same first name and last name exists
+        $existingCustomerName = DB::select('
+            SELECT * FROM customer 
+            WHERE LOWER(first_name) = ? AND LOWER(last_name) = ?', 
+            [strtolower($request->first_name), strtolower($request->last_name)]
+        );
 
-        if ($existingCustomerFnameAndLname) {
+        if (!empty($existingCustomerName)) {
             return response()->json([
                 'message' => 'A Customer with the same firstname and lastname already exists.'
             ], 422);
         }
 
-        // Check if mall with same fnamae, lname, email  and phono number exists (case-insensitive)
+        // Check if customer with all same details exists
         $existingCustomer = DB::select('
             SELECT * FROM customer 
             WHERE LOWER(first_name) = ? AND LOWER(last_name) = ? AND LOWER(email) = ? AND LOWER(phonenumber) = ?', 
@@ -66,24 +85,29 @@ class CustomerController extends Controller
 
         if (!empty($existingCustomer)) {
             return response()->json([
-                'message' => 'A Customer with the same firstname, lastname, email and Phone number already exists.'
+                'message' => 'A Customer with the same details already exists.'
             ], 422);
         }
 
-        // Insert new mall
-        DB::insert('INSERT INTO customer (first_name, last_name, email, phonenumber , created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())', [
+        // Insert new customer
+        DB::insert('INSERT INTO customer (first_name, last_name, email, phonenumber, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())', [
             $request->first_name,
             $request->last_name,
             $request->email,
             $request->phonenumber,
+            1
         ]);
 
-        return response()->json(['message' => 'Customer added successfully']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Customer added successfully'
+        ]);
     }
 
     public function updateStatus($id)
     {
         try {
+            // Check if customer exists
             $customer = DB::select('SELECT * FROM customer WHERE customer_id = ?', [$id]);
             
             if (empty($customer)) {
@@ -98,12 +122,12 @@ class CustomerController extends Controller
             if (!empty($activeBookings)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot deactivate customer: It has active bookings'
+                    'message' => 'Cannot deactivate customer: They have active bookings'
                 ], 422);
             }
 
             // Update the active status to 0
-            DB::update('UPDATE customer SET active = 0 WHERE customer_id = ?', [$id]);
+            DB::update('UPDATE customer SET active = 0, updated_at = NOW() WHERE customer_id = ?', [$id]);
 
             return response()->json([
                 'success' => true,
@@ -124,75 +148,84 @@ class CustomerController extends Controller
             $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
-                'email' => 'required|string|max:255',
+                'email' => 'required|string|max:255|email',
                 'phonenumber' => 'required|string|max:255',
             ]);
 
-            // Check if manager exists
-            $customer = DB::select('SELECT * FROM customer WHERE customer_id = ?', [$id]);
-            if (empty($customer)) {
+            // Get current customer
+            $currentCustomer = DB::select('SELECT * FROM customer WHERE customer_id = ?', [$id]);
+            if (empty($currentCustomer)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Customer not found'
                 ], 404);
             }
-            
-            // Check if another customer has the same details (excluding current customer)
-            $existingCustomer = DB::select('
-                SELECT * FROM customer 
-                WHERE LOWER(first_name) = ? AND LOWER(last_name) = ? AND LOWER(email) = ? AND LOWER(phonenumber) = ? AND customer_id != ?',
-                [
-                    strtolower($request->first_name), 
-                    strtolower($request->last_name), 
-                    strtolower($request->email),
-                    strtolower($request->phonenumber),
-                    $id
-                ]
-            );
 
-            if (!empty($existingCustomer)) {
+            $currentCustomer = $currentCustomer[0];
+
+            // Check if any data is actually changing
+            if ($currentCustomer->first_name === $request->first_name && 
+                $currentCustomer->last_name === $request->last_name && 
+                $currentCustomer->email === $request->email && 
+                $currentCustomer->phonenumber === $request->phonenumber) {
                 return response()->json([
-                    'message' => 'Another customer with the same details already exists.'
-                ], 422);
+                    'success' => true,
+                    'message' => 'No changes were made to the customer.'
+                ]);
             }
 
-             // Check if another customer has the same email (excluding current customer)
-             $existingCustomerEmail = DB::select('
-                SELECT * FROM customer 
-                WHERE LOWER(email) = ? AND customer_id != ?',
-                [
-                    strtolower($request->email), 
-                    $id
-                ]
-            );
+            // Check if email is being changed
+            if (strtolower($currentCustomer->email) !== strtolower($request->email)) {
+                $existingCustomerEmail = DB::select('
+                    SELECT * FROM customer 
+                    WHERE LOWER(email) = ? 
+                    AND customer_id != ?',
+                    [
+                        strtolower($request->email),
+                        $id
+                    ]
+                );
 
-            if (!empty($existingCustomerEmail)) {
-                return response()->json([
-                    'message' => 'Another customer with the same email already exists.'
-                ], 422);
+                if (!empty($existingCustomerEmail)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Another customer with the same email already exists.'
+                    ], 422);
+                }
             }
 
-             // Check if another customer has the same firstname and lastname (excluding current customer)
-             $existingCustomerFnameAndLname = DB::select('
-                SELECT * FROM customer 
-                WHERE LOWER(first_name) = ? AND LOWER(last_name) = ? AND customer_id != ?',
-                [
-                    strtolower($request->first_name), 
-                    strtolower($request->last_name), 
-                    $id
-                ]
-            );
+            // Check if name combination is being changed
+            if (strtolower($currentCustomer->first_name) !== strtolower($request->first_name) || 
+                strtolower($currentCustomer->last_name) !== strtolower($request->last_name)) {
+                
+                $existingCustomerName = DB::select('
+                    SELECT * FROM customer 
+                    WHERE LOWER(first_name) = ? 
+                    AND LOWER(last_name) = ? 
+                    AND customer_id != ?',
+                    [
+                        strtolower($request->first_name),
+                        strtolower($request->last_name),
+                        $id
+                    ]
+                );
 
-            if (!empty($existingCustomerFnameAndLname)) {
-                return response()->json([
-                    'message' => 'Another customer with the same firstname and lastname already exists.'
-                ], 422);
+                if (!empty($existingCustomerName)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Another customer with the same first name and last name already exists.'
+                    ], 422);
+                }
             }
 
-            // Update the manager
+            // Update the customer
             DB::update('
                 UPDATE customer 
-                SET first_name = ?, last_name = ?, email = ?, phonenumber = ?, updated_at = NOW() 
+                SET first_name = ?, 
+                    last_name = ?, 
+                    email = ?, 
+                    phonenumber = ?, 
+                    updated_at = NOW() 
                 WHERE customer_id = ?',
                 [
                     $request->first_name,
@@ -230,7 +263,7 @@ class CustomerController extends Controller
             }
 
             // Update the active status to 1
-            DB::update('UPDATE customer SET active = 1 WHERE customer_id = ?', [$id]);
+            DB::update('UPDATE customer SET active = 1, updated_at = NOW() WHERE customer_id = ?', [$id]);
 
             return response()->json([
                 'success' => true,

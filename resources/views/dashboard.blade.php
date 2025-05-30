@@ -10,6 +10,12 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @if(session('error'))
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <span class="block sm:inline">{{ session('error') }}</span>
+                </div>
+            @endif
+
             <!-- Statistics Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 <!-- Total Bookings -->
@@ -21,11 +27,11 @@
                             </div>
                             <div class="ml-4">
                                 <p class="text-sm text-gray-600 dark:text-gray-400">Total Bookings</p>
-                                <p class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $totalBookings }}</p>
+                                <p class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $totalBookings ?? 0 }}</p>
                             </div>
                         </div>
                         <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                            {{ $todayBookings }} new today
+                            {{ $todayBookings ?? 0 }} new today
                         </p>
                     </div>
                 </div>
@@ -39,7 +45,7 @@
                             </div>
                             <div class="ml-4">
                                 <p class="text-sm text-gray-600 dark:text-gray-400">Total Customers</p>
-                                <p class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $totalCustomers }}</p>
+                                <p class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $totalCustomers ?? 0 }}</p>
                             </div>
                         </div>
                     </div>
@@ -54,7 +60,7 @@
                             </div>
                             <div class="ml-4">
                                 <p class="text-sm text-gray-600 dark:text-gray-400">Total Movies</p>
-                                <p class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $totalMovies }}</p>
+                                <p class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $totalMovies ?? 0 }}</p>
                             </div>
                         </div>
                     </div>
@@ -69,7 +75,7 @@
                             </div>
                             <div class="ml-4">
                                 <p class="text-sm text-gray-600 dark:text-gray-400">Total Cinemas</p>
-                                <p class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $totalCinemas }}</p>
+                                <p class="text-2xl font-semibold text-gray-800 dark:text-gray-200">{{ $totalCinemas ?? 0 }}</p>
                             </div>
                         </div>
                     </div>
@@ -99,12 +105,16 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($popularMovies as $movie)
+                                    @forelse($popularMovies ?? [] as $movie)
                                     <tr class="border-t">
                                         <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ $movie->title }}</td>
                                         <td class="px-4 py-2 text-right text-gray-600 dark:text-gray-400">{{ $movie->booking_count }}</td>
                                     </tr>
-                                    @endforeach
+                                    @empty
+                                    <tr>
+                                        <td colspan="2" class="px-4 py-2 text-center text-gray-600 dark:text-gray-400">No movie data available</td>
+                                    </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -126,7 +136,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($recentBookings as $booking)
+                                    @forelse($recentBookings ?? [] as $booking)
                                     <tr class="border-t">
                                         <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ $booking->customer_name }}</td>
                                         <td class="px-4 py-2 text-gray-600 dark:text-gray-400">{{ $booking->movie_title }}</td>
@@ -142,7 +152,11 @@
                                             {{ \Carbon\Carbon::parse($booking->created_at)->format('M d, Y H:i') }}
                                         </td>
                                     </tr>
-                                    @endforeach
+                                    @empty
+                                    <tr>
+                                        <td colspan="4" class="px-4 py-2 text-center text-gray-600 dark:text-gray-400">No recent bookings</td>
+                                    </tr>
+                                    @endforelse
                                 </tbody>
                             </table>
                         </div>
@@ -182,7 +196,8 @@
     </div>
 
     <script>
-        // Initialize Booking Status Chart
+        // Initialize Booking Status Chart only if data is available
+        @if(isset($bookingStats) && $bookingStats->count() > 0)
         const bookingStatusChart = new Chart(
             document.getElementById('bookingStatusChart'),
             {
@@ -217,5 +232,6 @@
                 }
             }
         );
+        @endif
     </script>
 </x-app-layout>

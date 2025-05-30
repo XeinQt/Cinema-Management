@@ -36,7 +36,21 @@ class ScreeningController extends Controller
             $query->where('s.active', 0);
         }
 
-        return DataTables::of($query)->make(true);
+        return DataTables::of($query)
+            ->addColumn('action', function($row) {
+                $buttons = '';
+                
+                if ($row->active == 1) {
+                    $buttons .= '<i class="fas fa-edit edit-screening" data-id="'.$row->screening_id.'"></i>';
+                    $buttons .= '<i class="fas fa-trash delete-screening" data-id="'.$row->screening_id.'"></i>';
+                } else {
+                    $buttons .= '<i class="fas fa-undo restore-screening" data-id="'.$row->screening_id.'"></i>';
+                }
+                
+                return $buttons;
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
     public function store(Request $request)
@@ -150,6 +164,19 @@ class ScreeningController extends Controller
                     ], 404);
                 }
 
+                // Format time for comparison
+                $time = \Carbon\Carbon::parse($request->time)->format('Y-m-d H:i:s');
+
+                // Check if any data is actually changing
+                if ($screening[0]->cinema_id == $request->cinema_select && 
+                    $screening[0]->movie_id == $request->movie_select && 
+                    $screening[0]->screening_time == $time) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'No changes were made to the screening.'
+                    ]);
+                }
+
                 // Check if cinema exists and is active
                 $cinema = DB::select('SELECT cinema_id FROM cinemas WHERE cinema_id = ? AND active = 1 LIMIT 1', [$request->cinema_select]);
                 if (empty($cinema)) {
@@ -167,9 +194,6 @@ class ScreeningController extends Controller
                         'message' => 'Movie not found or is inactive',
                     ], 404);
                 }
-
-                // Format time
-                $time = \Carbon\Carbon::parse($request->time)->format('Y-m-d H:i:s');
 
                 // Check if screening time exists for other screenings
                 $existingScreening = DB::select('
@@ -242,6 +266,42 @@ class ScreeningController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to restore screening: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getActiveCinemas()
+    {
+        try {
+            $cinemas = DB::table('cinemas')
+                ->where('active', 1)
+                ->select('cinema_id', 'name')
+                ->orderBy('name')
+                ->get();
+
+            return response()->json($cinemas);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch cinemas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getActiveMovies()
+    {
+        try {
+            $movies = DB::table('movies')
+                ->where('active', 1)
+                ->select('movie_id', 'title')
+                ->orderBy('title')
+                ->get();
+
+            return response()->json($movies);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch movies: ' . $e->getMessage()
             ], 500);
         }
     }

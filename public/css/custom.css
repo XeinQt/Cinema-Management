@@ -6,7 +6,8 @@
     width: 150px;
 }
 
-#bookingTable td:nth-child(7) > div, #bookingTable td:nth-child(8) > div {
+#bookingTable td:nth-child(7) > div,
+#bookingTable td:nth-child(8) > div {
     margin-left: 31px;
 }
 
@@ -16,7 +17,7 @@
 /* DataTables Wrapper */
 .dataTables_wrapper {
     padding: 20px;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
 }
 
 /* Table Design */
@@ -42,7 +43,6 @@
 
 /* Body Cells */
 .dataTable tbody td {
-    padding: 14px 16px;
     color: #4b5563;
     border-bottom: 1px solid #e5e7eb;
     background-color: white;
@@ -61,22 +61,10 @@
 /* Fixed Column Widths */
 .dataTable th,
 .dataTable td {
-    width: 150px !important;
-    min-width: 150px !important;
-    max-width: 150px !important;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-
-/* Actions Column */
-.dataTable th:last-child,
-.dataTable td:last-child {
-    width: 200px !important;
-    min-width: 200px !important;
-    max-width: 200px !important;
-}
-
 
 /* Search and Length Controls */
 .dataTables_length,
@@ -136,17 +124,6 @@
     cursor: not-allowed;
 }
 
-/* Processing Message */
-.dataTables_processing {
-    background-color: rgba(255, 255, 255, 0.9);
-    border: 1px solid #e5e7eb;
-    border-radius: 6px;
-    padding: 12px 24px;
-    color: #4b5563;
-    font-weight: 500;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
 /* Info Text */
 .dataTables_info {
     margin-top: 20px;
@@ -159,15 +136,27 @@
     .dataTables_wrapper {
         padding: 10px;
     }
-    
+
     .dataTables_length,
     .dataTables_filter {
         text-align: left;
         margin-bottom: 10px;
     }
-    
+
     .dataTables_filter input {
         width: 100%;
         margin: 8px 0;
     }
+}
+
+i {
+    cursor: pointer;
+}
+
+.fa-edit {
+    margin-right: 10px;
+}
+
+.fa-trash {
+    margin-left: 5px;
 }

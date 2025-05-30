@@ -118,14 +118,14 @@
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Description</label>
-                    <input 
+                    <textarea 
                         type="text" 
                         name="description" 
                         id="edit_description"
                         class="w-full px-3 py-2 border rounded" 
                         placeholder="A premier shopping destination with entertainment facilities"
                         required
-                    >
+                    ></textarea>
                 </div>
                 <div class="flex justify-end">
                     <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>

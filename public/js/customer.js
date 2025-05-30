@@ -77,53 +77,45 @@ function initializeCustomerTable(filter = "") {
 
     customerTable = $('#customerTable').DataTable({
         ajax: {
-            url: baseUrl() + '/CustomersManagement/DataTables',
-            type: 'GET',
+            url: baseUrl() + "/CustomersManagement/DataTables",
             data: function(d) {
                 d.filter = filter;
-                return d;
             }
         },
         processing: true,
         serverSide: true,
         scrollX: true,
-        autoWidth: false,
         columns: [
-            { 
-                data: 'customer_id', 
-                name: 'customer_id', 
-                title: 'ID',
-                width: '50px'
-            },
-            { 
-                data: 'first_name', 
-                name: 'first_name', 
-                title: 'First Name',
-                width: '120px'
-            },
-            { 
-                data: 'last_name', 
-                name: 'last_name', 
-                title: 'Last Name',
-                width: '120px'
-            },
-            { 
-                data: 'email', 
-                name: 'email', 
-                title: 'Email',
-                width: '200px'
-            },
-            { 
-                data: 'phonenumber', 
-                name: 'phonenumber', 
-                title: 'Phone No.',
-                width: '120px'
+            {
+                data: "customer_id",
+                name: "customer_id",
+                title: "ID",
+                width: "50px"
             },
             {
-                data: 'active',
-                name: 'active',
-                title: 'Status',
-                width: '100px',
+                data: "first_name",
+                name: "first_name",
+                title: "First Name"
+            },
+            {
+                data: "last_name",
+                name: "last_name",
+                title: "Last Name"
+            },
+            {
+                data: "email",
+                name: "email",
+                title: "Email"
+            },
+            {
+                data: "phonenumber",
+                name: "phonenumber",
+                title: "Phone Number"
+            },
+            {
+                data: "active",
+                name: "active",
+                title: "Status",
                 render: function(data) {
                     return data == 1
                         ? '<span class="px-2 py-1 bg-green-500 text-white rounded-full text-sm">Active</span>'
@@ -131,56 +123,17 @@ function initializeCustomerTable(filter = "") {
                 }
             },
             {
-                data: null,
-                title: 'Actions',
-                width: '200px',
+                data: "action",
+                name: "action",
+                title: "Actions",
                 orderable: false,
-                className: 'text-left',
-                render: function(data, type, row) {
-                    let buttons = '<div class="flex space-x-2">';
-                    
-                    // Edit button - show for both active and inactive
-                    buttons += `<button class="edit-customer inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" data-id="${row.customer_id}">
-                        <i class="fas fa-edit mr-1"></i> Edit
-                    </button>`;
-
-                    // Show different buttons based on active status
-                    if (row.active == 1) {
-                        buttons += `<button class="delete-customer inline-flex items-center bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded" data-id="${row.customer_id}">
-                            <i class="fas fa-trash mr-1"></i> Deactivate
-                        </button>`;
-                    } else {
-                        buttons += `<button class="restore-customer inline-flex items-center bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded" data-id="${row.customer_id}">
-                            <i class="fas fa-undo mr-1"></i> Restore
-                        </button>`;
-                    }
-                    
-                    buttons += '</div>';
-                    return buttons;
-                }
+                searchable: false,
+                width: "100px"
             }
         ],
-        columnDefs: [
-            {
-                targets: [0, 1, 2, 3, 4, 5], // Name, Email, Phone columns
-                className: 'text-left'
-            },
-            {
-                targets: -1, // Actions column
-                className: 'text-left'
-            }
-        ],
-        dom: '<"top"lf>rt<"bottom"ip><"clear">',
-        language: {
-            search: "Search:",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            paginate: {
-                first: "First",
-                last: "Last",
-                next: "Next",
-                previous: "Previous"
-            }
+        order: [[0, "desc"]],
+        drawCallback: function() {
+            document.getElementById("filter").value = currentFilter;
         }
     });
 
@@ -201,29 +154,25 @@ function initializeCustomerTable(filter = "") {
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
+            #customerTable .btn {
+                padding: 0.25rem 0.5rem;
+                margin: 0 2px;
+            }
             .dataTables_scrollBody {
                 min-height: 400px;
             }
-            .dataTables_wrapper .dataTables_scroll {
-                margin-bottom: 15px;
+            .spinner-border {
+                display: inline-block;
+                width: 2rem;
+                height: 2rem;
+                vertical-align: text-bottom;
+                border: 0.25em solid currentColor;
+                border-right-color: transparent;
+                border-radius: 50%;
+                animation: spinner-border .75s linear infinite;
             }
-            .dataTables_scrollHeadInner table {
-                margin-bottom: 0 !important;
-            }
-            .dataTables_scrollBody::-webkit-scrollbar {
-                height: 8px;
-                width: 8px;
-            }
-            .dataTables_scrollBody::-webkit-scrollbar-track {
-                background: #f1f1f1;
-                border-radius: 4px;
-            }
-            .dataTables_scrollBody::-webkit-scrollbar-thumb {
-                background: #888;
-                border-radius: 4px;
-            }
-            .dataTables_scrollBody::-webkit-scrollbar-thumb:hover {
-                background: #555;
+            @keyframes spinner-border {
+                to { transform: rotate(360deg); }
             }
         </style>
     `);
@@ -239,8 +188,12 @@ document.getElementById("filter").addEventListener("change", function() {
 
 // Handle delete customer
 $(document).on('click', '.delete-customer', function() {
-    const customerId = $(this).data('id');
-    
+    const customerId = $(this).attr('data-id');
+    if (!customerId) {
+        console.error("Customer ID not found");
+        return;
+    }
+
     Swal.fire({
         title: 'Are you sure?',
         text: "This customer will be deactivated!",
@@ -271,12 +224,7 @@ async function updateCustomerStatus(customerId) {
         const data = await response.json();
 
         if (data.success) {
-            Swal.fire(
-                'Deactivated!',
-                data.message,
-                'success'
-            );
-            // Reload the DataTable to reflect the changes
+            Swal.fire('Deactivated!', data.message, 'success');
             if (customerTable) {
                 customerTable.ajax.reload(null, false);
             }
@@ -291,9 +239,7 @@ async function updateCustomerStatus(customerId) {
             'error'
         );
     }
-} 
-
-
+}
 
 function openEditModal() {
     const modal = document.getElementById("editCustomerModal");
@@ -308,7 +254,12 @@ function closeEditModal() {
 }
 
 $(document).on('click', '.edit-customer', function() {
-    const customerId = $(this).data('id');
+    const customerId = $(this).attr('data-id');
+    if (!customerId) {
+        console.error("Customer ID not found");
+        return;
+    }
+
     const row = customerTable.row($(this).closest('tr')).data();
     
     // Populate the edit form
@@ -372,8 +323,12 @@ document.getElementById("editCustomerForm").addEventListener("submit", async fun
 
 // Add restore functionality
 $(document).on('click', '.restore-customer', function() {
-    const customerId = $(this).data('id');
-    
+    const customerId = $(this).attr('data-id');
+    if (!customerId) {
+        console.error("Customer ID not found");
+        return;
+    }
+
     Swal.fire({
         title: 'Restore Customer?',
         text: "This will reactivate the customer!",
@@ -384,13 +339,13 @@ $(document).on('click', '.restore-customer', function() {
         confirmButtonText: 'Yes, restore it!'
     }).then((result) => {
         if (result.isConfirmed) {
-            restoreCustomer(customerId);
+            restoreCustomerStatus(customerId);
         }
     });
 });
 
-// Function to restore customer
-async function restoreCustomer(customerId) {
+// Function to restore customer status
+async function restoreCustomerStatus(customerId) {
     try {
         const response = await fetch(`${baseUrl()}/CustomersManagement/restore/${customerId}`, {
             method: 'POST',
@@ -404,12 +359,7 @@ async function restoreCustomer(customerId) {
         const data = await response.json();
 
         if (data.success) {
-            Swal.fire(
-                'Restored!',
-                data.message,
-                'success'
-            );
-            // Reload the DataTable to reflect the changes
+            Swal.fire('Restored!', data.message, 'success');
             if (customerTable) {
                 customerTable.ajax.reload(null, false);
             }

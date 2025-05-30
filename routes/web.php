@@ -46,10 +46,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/ManagersManagement/restore/{id}', [ManagerController::class, 'restore'])->name('managers.restore');
 
     Route::get('/MoviesManagement', [MovieController::class, 'list'])->name('movies');
-    Route::get('/MoviesManagement/DataTables', [MovieController::class, 'dataTables'])->name('movies.dataTables');
-    Route::post('/MoviesManagement/create', [MovieController::class, 'store'])->name('movies.store');
-    Route::post('/MoviesManagement/updateStatus/{id}', [MovieController::class, 'updateStatus'])->name('movies.updateStatus');
+    Route::get('/MoviesManagement/DataTables', [MovieController::class, 'dataTables'])->name('movies.datatables');
+    Route::post('/MoviesManagement/store', [MovieController::class, 'store'])->name('movies.store');
     Route::post('/MoviesManagement/update/{id}', [MovieController::class, 'update'])->name('movies.update');
+    Route::post('/MoviesManagement/updateStatus/{id}', [MovieController::class, 'updateStatus'])->name('movies.updateStatus');
     Route::post('/MoviesManagement/restore/{id}', [MovieController::class, 'restore'])->name('movies.restore');
 
     Route::get('/ScreeningsManagement', [ScreeningController::class, 'list'])->name('screenings');
@@ -58,6 +58,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/ScreeningsManagement/updateStatus/{id}', [ScreeningController::class, 'updateStatus'])->name('screenings.updateStatus');
     Route::post('/ScreeningsManagement/update/{id}', [ScreeningController::class, 'update'])->name('screenings.update');
     Route::post('/ScreeningsManagement/restore/{id}', [ScreeningController::class, 'restore'])->name('screenings.restore');
+    Route::get('/api/activeCinemas', [ScreeningController::class, 'getActiveCinemas'])->name('screenings.activeCinemas');
+    Route::get('/api/activeMovies', [ScreeningController::class, 'getActiveMovies'])->name('screenings.activeMovies');
 
     Route::get('/BookingsManagement', [BookingController::class, 'list'])->name('bookings');
     Route::get('/BookingsManagement/DataTables', [BookingController::class, 'dataTables'])->name('bookings.dataTables');

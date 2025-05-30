@@ -35,83 +35,131 @@ class CinemasController extends Controller
         }
 
         $cinemas = DB::select($query);
-        return DataTables::of($cinemas)->make(true);
+        return DataTables::of($cinemas)
+            ->addColumn('action', function($row) {
+                $buttons = '';
+                
+                if ($row->active == 1) {
+                    $buttons .= '<i class="fas fa-edit edit-cinema" data-id="'.$row->cinema_id.'"></i>';
+                    $buttons .= '<i class="fas fa-trash delete-cinema" data-id="'.$row->cinema_id.'"></i>';
+                } else {
+                    $buttons .= '<i class="fas fa-undo restore-cinema" data-id="'.$row->cinema_id.'"></i>';
+                }
+                
+                return $buttons;
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
     public function store(Request $request)
     {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'mall_id' => 'required|exists:malls,mall_id',
+            'manager_id' => 'required|exists:managers,manager_id',
+        ]);
+
+        // Check if cinema with same name exists in the same mall
+        $existingCinema = DB::select('
+            SELECT * FROM cinemas 
+            WHERE LOWER(name) = ? AND mall_id = ?', 
+            [strtolower($request->name), $request->mall_id]
+        );
+
+        if (!empty($existingCinema)) {
+            return response()->json([
+                'message' => 'A cinema with the same name already exists in this mall.'
+            ], 422);
+        }
+
+        // Insert new cinema
+        DB::insert('INSERT INTO cinemas (name, mall_id, manager_id, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())', [
+            $request->name,
+            $request->mall_id,
+            $request->manager_id,
+        ]);
+
+        return response()->json(['message' => 'Cinema added successfully']);
+    }
+
+    public function update($id, Request $request)
+    {
         try {
             $request->validate([
                 'name' => 'required|string|max:255',
-                'manager_full_name' => 'required|string|max:255',
-                'cinema_name' => 'required|string|max:255',
+                'mall_id' => 'required|exists:malls,mall_id',
+                'manager_id' => 'required|exists:managers,manager_id',
             ]);
 
-            return DB::transaction(function () use ($request) {
-                $mall = DB::select('SELECT mall_id FROM malls WHERE name = ? AND active = 1 LIMIT 1', [$request->name]);
+            // Get current cinema
+            $currentCinema = DB::select('SELECT * FROM cinemas WHERE cinema_id = ?', [$id]);
+            if (empty($currentCinema)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cinema not found'
+                ], 404);
+            }
 
-                if (empty($mall)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Mall not found or is inactive',
-                    ], 404);
-                }
+            $currentCinema = $currentCinema[0];
 
-                $mallId = $mall[0]->mall_id;
+            // Check if any data is actually changing
+            if ($currentCinema->name === $request->name && 
+                $currentCinema->mall_id == $request->mall_id && 
+                $currentCinema->manager_id == $request->manager_id) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No changes were made to the cinema.'
+                ]);
+            }
 
-                $fullName = trim($request->manager_full_name);
-                $nameParts = preg_split('/\s+/', $fullName);
+            // Check if cinema name exists in the same mall (excluding current cinema)
+            if ($currentCinema->name !== $request->name || $currentCinema->mall_id != $request->mall_id) {
+                $existingCinema = DB::select('
+                    SELECT * FROM cinemas 
+                    WHERE LOWER(name) = ? 
+                    AND mall_id = ? 
+                    AND cinema_id != ?',
+                    [
+                        strtolower($request->name),
+                        $request->mall_id,
+                        $id
+                    ]
+                );
 
-                if (count($nameParts) < 2) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Please provide both first and last name for the manager.',
-                    ], 422);
-                }
-
-                $firstName = $nameParts[0];
-                $lastName = $nameParts[1];
-
-                $manager = DB::select('SELECT manager_id FROM managers WHERE first_name = ? AND last_name = ? AND active = 1 LIMIT 1', [$firstName, $lastName]);
-
-                if (empty($manager)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Manager not found or is inactive',
-                    ], 404);
-                }
-
-                $managerId = $manager[0]->manager_id;
-
-                $existingCinema = DB::select('SELECT * FROM cinemas WHERE name = ? AND active = 1', [$request->cinema_name]);
                 if (!empty($existingCinema)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Cinema name already exists.',
-                    ], 409);
+                        'message' => 'Another cinema with the same name already exists in this mall.'
+                    ], 422);
                 }
+            }
 
-                DB::insert('INSERT INTO cinemas (mall_id, manager_id, name, active, created_at, updated_at) VALUES (?, ?, ?, 1, NOW(), NOW())', [
-                    $mallId,
-                    $managerId,
-                    $request->cinema_name,
-                ]);
+            // Update the cinema
+            DB::update('
+                UPDATE cinemas 
+                SET name = ?, 
+                    mall_id = ?, 
+                    manager_id = ?, 
+                    updated_at = NOW() 
+                WHERE cinema_id = ?',
+                [
+                    $request->name,
+                    $request->mall_id,
+                    $request->manager_id,
+                    $id
+                ]
+            );
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Cinema created successfully',
-                ]);
-            });
-        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
+                'success' => true,
+                'message' => 'Cinema updated successfully'
+            ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to create cinema: ' . $e->getMessage(),
+                'message' => 'Failed to update cinema: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -134,12 +182,12 @@ class CinemasController extends Controller
             if (!empty($activeScreenings)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot deactivate cinema: It has active screenings scheduled'
+                    'message' => 'Cannot deactivate cinema: There are still active screenings'
                 ], 422);
             }
 
             // Update the active status to 0
-            DB::update('UPDATE cinemas SET active = 0 WHERE cinema_id = ?', [$id]);
+            DB::update('UPDATE cinemas SET active = 0, updated_at = NOW() WHERE cinema_id = ?', [$id]);
 
             return response()->json([
                 'success' => true,
@@ -157,7 +205,6 @@ class CinemasController extends Controller
     public function restore($id)
     {
         try {
-            // Check if cinema exists
             $cinema = DB::select('SELECT * FROM cinemas WHERE cinema_id = ?', [$id]);
             
             if (empty($cinema)) {
@@ -167,26 +214,8 @@ class CinemasController extends Controller
                 ], 404);
             }
 
-            // Check if mall is active
-            $mall = DB::select('SELECT active FROM malls WHERE mall_id = ?', [$cinema[0]->mall_id]);
-            if (empty($mall) || $mall[0]->active == 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot restore cinema: Associated mall is inactive'
-                ], 422);
-            }
-
-            // Check if manager is active
-            $manager = DB::select('SELECT active FROM managers WHERE manager_id = ?', [$cinema[0]->manager_id]);
-            if (empty($manager) || $manager[0]->active == 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot restore cinema: Associated manager is inactive'
-                ], 422);
-            }
-
             // Update the active status to 1
-            DB::update('UPDATE cinemas SET active = 1 WHERE cinema_id = ?', [$id]);
+            DB::update('UPDATE cinemas SET active = 1, updated_at = NOW() WHERE cinema_id = ?', [$id]);
 
             return response()->json([
                 'success' => true,
@@ -197,79 +226,6 @@ class CinemasController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to restore cinema: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    public function update($id, Request $request)
-    {
-        try {
-            $request->validate([
-                'mall_id' => 'required|integer',
-                'manager_id' => 'required|integer',
-                'cinema_name' => 'required|string|max:255',
-            ]);
-
-            return DB::transaction(function () use ($request, $id) {
-                // Check if cinema exists
-                $cinema = DB::select('SELECT * FROM cinemas WHERE cinema_id = ? AND active = 1', [$id]);
-                if (empty($cinema)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Cinema not found or is inactive',
-                    ], 404);
-                }
-
-                // Check if mall exists and is active
-                $mall = DB::select('SELECT mall_id FROM malls WHERE mall_id = ? AND active = 1 LIMIT 1', [$request->mall_id]);
-                if (empty($mall)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Mall not found or is inactive',
-                    ], 404);
-                }
-
-                // Check if manager exists and is active
-                $manager = DB::select('SELECT manager_id FROM managers WHERE manager_id = ? AND active = 1 LIMIT 1', [$request->manager_id]);
-                if (empty($manager)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Manager not found or is inactive',
-                    ], 404);
-                }
-
-                // Check if cinema name exists for other cinemas
-                $existingCinema = DB::select('SELECT * FROM cinemas WHERE name = ? AND cinema_id != ? AND active = 1', [$request->cinema_name, $id]);
-                if (!empty($existingCinema)) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Cinema name already exists.',
-                    ], 409);
-                }
-
-                // Update the cinema
-                DB::update('UPDATE cinemas SET mall_id = ?, manager_id = ?, name = ?, updated_at = NOW() WHERE cinema_id = ?', [
-                    $request->mall_id,
-                    $request->manager_id,
-                    $request->cinema_name,
-                    $id
-                ]);
-
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Cinema updated successfully',
-                ]);
-            });
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to update cinema: ' . $e->getMessage(),
             ], 500);
         }
     }

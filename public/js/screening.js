@@ -9,7 +9,6 @@ const dropdownCache = {
 function initializeScreeningTable(filter = "") {
     currentFilter = filter;
 
-    // Destroy existing DataTable if it exists
     if ($.fn.DataTable.isDataTable('#screeningTable')) {
         $('#screeningTable').DataTable().destroy();
     }
@@ -17,18 +16,8 @@ function initializeScreeningTable(filter = "") {
     screeningTable = $('#screeningTable').DataTable({
         ajax: {
             url: baseUrl() + "/ScreeningsManagement/DataTables",
-            type: 'GET',
             data: function(d) {
                 d.filter = filter;
-                return d;
-            },
-            error: function(xhr, error, thrown) {
-                console.error('DataTables error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to load screening data. Please try again.'
-                });
             }
         },
         processing: true,
@@ -38,7 +27,8 @@ function initializeScreeningTable(filter = "") {
             {
                 data: "screening_id",
                 name: "screening_id",
-                title: "ID"
+                title: "ID",
+                width: "50px"
             },
             {
                 data: "cinema_name",
@@ -70,76 +60,17 @@ function initializeScreeningTable(filter = "") {
                 }
             },
             {
-                data: null,
+                data: "action",
+                name: "action",
                 title: "Actions",
-                className: "items-start",
                 orderable: false,
-                render: function(data, type, row) {
-                    let buttons = '<div class="flex space-x-2">';
-                    
-                    // Edit button - show for both active and inactive
-                    buttons += `<button class="edit-screening inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" data-id="${row.screening_id}">
-                        <i class="fas fa-edit mr-1"></i> Edit
-                    </button>`;
-
-                    // Show different buttons based on active status
-                    if (row.active == 1) {
-                        buttons += `<button class="delete-screening inline-flex items-center bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded" data-id="${row.screening_id}">
-                            <i class="fas fa-trash mr-1"></i> Deactivate
-                        </button>`;
-                    } else {
-                        buttons += `<button class="restore-screening inline-flex items-center bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded" data-id="${row.screening_id}">
-                            <i class="fas fa-undo mr-1"></i> Restore
-                        </button>`;
-                    }
-                    
-                    buttons += '</div>';
-                    return buttons;
-                }
+                searchable: false,
+                width: "100px"
             }
         ],
-        columnDefs: [
-            {
-                targets: 0, // ID column
-                width: '50px',
-                className: 'text-left'
-            },
-            {
-                targets: [1, 2], // Cinema and Movie columns
-                width: '200px',
-                className: 'text-left'
-            },
-            {
-                targets: 3, // Screening Time column
-                width: '150px',
-                className: 'text-left'
-            },
-            {
-                targets: 4, // Status column
-                width: '100px',
-                className: 'text-left'
-            },
-            {
-                targets: -1, // Actions column
-                width: '150px',
-                className: 'text-left flex justify-start'
-            }
-        ],
-        dom: '<"top"lf>rt<"bottom"ip><"clear">',
-        autoWidth: false,
-        responsive: true,
-        pageLength: 10,
-        language: {
-            search: "Search:",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            paginate: {
-                first: "First",
-                last: "Last",
-                next: "Next",
-                previous: "Previous"
-            },
-            processing: '<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>'
+        order: [[0, "desc"]],
+        drawCallback: function() {
+            document.getElementById("filter").value = currentFilter;
         }
     });
 
@@ -191,8 +122,12 @@ document.getElementById("filter").addEventListener("change", function() {
 
 // Handle delete screening
 $(document).on('click', '.delete-screening', function() {
-    const screeningId = $(this).data('id');
-    
+    const screeningId = $(this).attr('data-id');
+    if (!screeningId) {
+        console.error("Screening ID not found");
+        return;
+    }
+
     Swal.fire({
         title: 'Are you sure?',
         text: "This screening will be deactivated!",
@@ -223,12 +158,7 @@ async function updateScreeningStatus(screeningId) {
         const data = await response.json();
 
         if (data.success) {
-            Swal.fire(
-                'Deactivated!',
-                data.message,
-                'success'
-            );
-            // Reload the DataTable to reflect the changes
+            Swal.fire('Deactivated!', data.message, 'success');
             if (screeningTable) {
                 screeningTable.ajax.reload(null, false);
             }
@@ -259,21 +189,124 @@ function closeModal() {
     modal.classList.remove("flex");
 }
 
+function openEditModal() {
+    const modal = document.getElementById("editScreeningModal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+function closeEditModal() {
+    const modal = document.getElementById("editScreeningModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
+
+async function populateDropdowns() {
+    try {
+        // Fetch cinemas
+        const cinemasResponse = await fetch(baseUrl() + "/CinemasManagement/DataTables");
+        const cinemasData = await cinemasResponse.json();
+        const cinemaSelect = document.getElementById("cinema_select");
+
+        // Clear existing options
+        cinemaSelect.innerHTML = '<option value="">Select Cinema</option>';
+
+        // Filter for active cinemas only
+        const activeCinemas = cinemasData.data.filter(cinema => cinema.active === 1);
+
+        activeCinemas.forEach(cinema => {
+            const option = document.createElement("option");
+            option.value = cinema.cinema_id;
+            option.textContent = cinema.name;
+            cinemaSelect.appendChild(option);
+        });
+
+        // Fetch movies
+        const moviesResponse = await fetch(baseUrl() + "/MoviesManagement/DataTables");
+        const moviesData = await moviesResponse.json();
+        const movieSelect = document.getElementById("movie_select");
+
+        // Clear existing options
+        movieSelect.innerHTML = '<option value="">Select Movie</option>';
+
+        // Filter for active movies only
+        const activeMovies = moviesData.data.filter(movie => movie.active === 1);
+
+        activeMovies.forEach(movie => {
+            const option = document.createElement("option");
+            option.value = movie.movie_id;
+            option.textContent = movie.title;
+            movieSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error("Error:", error);
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to load dropdown data"
+        });
+    }
+}
+
+async function populateEditDropdowns() {
+    try {
+        // Fetch cinemas
+        const cinemasResponse = await fetch(baseUrl() + "/CinemasManagement/DataTables");
+        const cinemasData = await cinemasResponse.json();
+        const cinemaSelect = document.getElementById("edit_cinema_select");
+
+        // Clear existing options
+        cinemaSelect.innerHTML = '<option value="">Select Cinema</option>';
+
+        // Filter for active cinemas only
+        const activeCinemas = cinemasData.data.filter(cinema => cinema.active === 1);
+
+        activeCinemas.forEach(cinema => {
+            const option = document.createElement("option");
+            option.value = cinema.cinema_id;
+            option.textContent = cinema.name;
+            cinemaSelect.appendChild(option);
+        });
+
+        // Fetch movies
+        const moviesResponse = await fetch(baseUrl() + "/MoviesManagement/DataTables");
+        const moviesData = await moviesResponse.json();
+        const movieSelect = document.getElementById("edit_movie_select");
+
+        // Clear existing options
+        movieSelect.innerHTML = '<option value="">Select Movie</option>';
+
+        // Filter for active movies only
+        const activeMovies = moviesData.data.filter(movie => movie.active === 1);
+
+        activeMovies.forEach(movie => {
+            const option = document.createElement("option");
+            option.value = movie.movie_id;
+            option.textContent = movie.title;
+            movieSelect.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error("Error:", error);
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to load dropdown data"
+        });
+    }
+}
+
 // Initialize form submission
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener("DOMContentLoaded", function() {
+    // Initialize the table
     initializeScreeningTable();
-    
+
+    // Add Screening Form Submission
     document.getElementById("addScreeningForm")?.addEventListener("submit", async function(e) {
         e.preventDefault();
 
         const formData = new FormData(this);
-        
-        // Format the datetime-local value to proper MySQL datetime format
-        const screeningTime = formData.get('time');
-        if (screeningTime) {
-            const date = new Date(screeningTime);
-            formData.set('time', date.toISOString().slice(0, 19).replace('T', ' '));
-        }
 
         try {
             const response = await fetch(baseUrl() + "/ScreeningsManagement/create", {
@@ -296,21 +329,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 this.reset();
                 closeModal();
-                clearDropdownCache();
-                
-                // Refresh the table after adding a screening
+
                 if (screeningTable) {
                     screeningTable.ajax.reload(null, false);
                 }
             } else {
                 Swal.fire({
                     icon: "error",
-                    title: "Error",
-                    text: data.message || "Failed to add screening.",
+                    title: "Oops...",
+                    text: data.message || "Failed to add Screening.",
                 });
             }
         } catch (error) {
-            console.error("Fetch Error:", error);
+            console.error("Error:", error);
             Swal.fire({
                 icon: "error",
                 title: "Unexpected Error",
@@ -319,22 +350,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Add event listener for edit form
+    // Edit Screening Form Submission
     document.getElementById("editScreeningForm")?.addEventListener("submit", async function(e) {
         e.preventDefault();
-        
+
         const formData = new FormData(this);
-        const screeningId = formData.get('screening_id');
+        const screeningId = formData.get("screening_id");
+
+        // Get the original row data
+        const originalRow = screeningTable.row($('.edit-screening[data-id="' + screeningId + '"]').closest('tr')).data();
         
-        // Format the datetime-local value
-        const screeningTime = formData.get('time');
-        if (screeningTime) {
-            const date = new Date(screeningTime);
-            formData.set('time', date.toISOString().slice(0, 19).replace('T', ' '));
+        // Check if any data has changed
+        const hasChanged = 
+            originalRow.cinema_name !== $('#edit_cinema_select option:selected').text() ||
+            originalRow.movie_title !== $('#edit_movie_select option:selected').text() ||
+            originalRow.screening_time !== formData.get("time");
+
+        if (!hasChanged) {
+            Swal.fire({
+                icon: "info",
+                title: "No Changes",
+                text: "No changes were made to the screening."
+            });
+            closeEditModal();
+            return;
         }
 
         try {
-            const response = await fetch(`${baseUrl()}/ScreeningsManagement/update/${screeningId}`, {
+            const response = await fetch(baseUrl() + `/ScreeningsManagement/update/${screeningId}`, {
                 method: "POST",
                 headers: {
                     "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
@@ -353,18 +396,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
 
                 closeEditModal();
+
                 if (screeningTable) {
                     screeningTable.ajax.reload(null, false);
                 }
             } else {
                 Swal.fire({
                     icon: "error",
-                    title: "Error",
-                    text: data.message || "Failed to update screening.",
+                    title: "Oops...",
+                    text: data.message || "Failed to update Screening.",
                 });
             }
         } catch (error) {
-            console.error("Fetch Error:", error);
+            console.error("Error:", error);
             Swal.fire({
                 icon: "error",
                 title: "Unexpected Error",
@@ -374,152 +418,53 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// Function to populate cinema and movie dropdowns
-async function populateDropdowns() {
-    try {
-        const cinemaSelect = document.getElementById('cinema_select');
-        const movieSelect = document.getElementById('movie_select');
-        
-        const cinemaFragment = document.createDocumentFragment();
-        const movieFragment = document.createDocumentFragment();
-
-        const defaultCinemaOption = new Option('Select Cinema', '');
-        const defaultMovieOption = new Option('Select Movie', '');
-        cinemaFragment.appendChild(defaultCinemaOption);
-        movieFragment.appendChild(defaultMovieOption);
-
-        const [cinemasData, moviesData] = await Promise.all([
-            dropdownCache.cinemas || fetch(baseUrl() + '/CinemasManagement/DataTables').then(r => r.json()),
-            dropdownCache.movies || fetch(baseUrl() + '/MoviesManagement/DataTables').then(r => r.json())
-        ]);
-
-        if (!dropdownCache.cinemas) dropdownCache.cinemas = cinemasData;
-        if (!dropdownCache.movies) dropdownCache.movies = moviesData;
-
-        // Filter for active cinemas only
-        const activeCinemas = cinemasData.data.filter(cinema => cinema.active === 1);
-        activeCinemas.forEach(cinema => {
-            const option = new Option(cinema.name, cinema.cinema_id);
-            cinemaFragment.appendChild(option);
-        });
-
-        // Filter for active movies only
-        const activeMovies = moviesData.data.filter(movie => movie.active === 1);
-        activeMovies.forEach(movie => {
-            const option = new Option(movie.title, movie.movie_id);
-            movieFragment.appendChild(option);
-        });
-
-        cinemaSelect.innerHTML = '';
-        movieSelect.innerHTML = '';
-        cinemaSelect.appendChild(cinemaFragment);
-        movieSelect.appendChild(movieFragment);
-
-    } catch (error) {
-        console.error('Error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to load cinema and movie data'
-        });
+// Handle edit screening
+$(document).on('click', '.edit-screening', function() {
+    const screeningId = $(this).attr('data-id');
+    if (!screeningId) {
+        console.error("Screening ID not found");
+        return;
     }
-}
 
-function clearDropdownCache() {
-    dropdownCache.cinemas = null;
-    dropdownCache.movies = null;
-}
+    const row = screeningTable.row($(this).closest('tr')).data();
 
-function openEditModal() {
-    const modal = document.getElementById("editScreeningModal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-    populateEditDropdowns();
-}
+    // Populate the edit form
+    document.getElementById('edit_screening_id').value = screeningId;
+    document.getElementById('edit_screening_time').value = row.screening_time;
 
-function closeEditModal() {
-    const modal = document.getElementById("editScreeningModal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-}
-
-// Function to populate edit form dropdowns
-async function populateEditDropdowns() {
-    try {
+    // Populate cinema and movie dropdowns
+    populateEditDropdowns().then(() => {
+        // Set selected values after dropdowns are populated
         const cinemaSelect = document.getElementById('edit_cinema_select');
         const movieSelect = document.getElementById('edit_movie_select');
-        
-        const cinemaFragment = document.createDocumentFragment();
-        const movieFragment = document.createDocumentFragment();
 
-        const defaultCinemaOption = new Option('Select Cinema', '');
-        const defaultMovieOption = new Option('Select Movie', '');
-        cinemaFragment.appendChild(defaultCinemaOption);
-        movieFragment.appendChild(defaultMovieOption);
-
-        const [cinemasData, moviesData] = await Promise.all([
-            dropdownCache.cinemas || fetch(baseUrl() + '/CinemasManagement/DataTables').then(r => r.json()),
-            dropdownCache.movies || fetch(baseUrl() + '/MoviesManagement/DataTables').then(r => r.json())
-        ]);
-
-        if (!dropdownCache.cinemas) dropdownCache.cinemas = cinemasData;
-        if (!dropdownCache.movies) dropdownCache.movies = moviesData;
-
-        // Filter for active cinemas only
-        const activeCinemas = cinemasData.data.filter(cinema => cinema.active === 1);
-        activeCinemas.forEach(cinema => {
-            const option = new Option(cinema.name, cinema.cinema_id);
-            cinemaFragment.appendChild(option);
+        // Find and select the cinema option
+        Array.from(cinemaSelect.options).forEach((option) => {
+            if (option.textContent === row.cinema_name) {
+                option.selected = true;
+            }
         });
 
-        // Filter for active movies only
-        const activeMovies = moviesData.data.filter(movie => movie.active === 1);
-        activeMovies.forEach(movie => {
-            const option = new Option(movie.title, movie.movie_id);
-            movieFragment.appendChild(option);
+        // Find and select the movie option
+        Array.from(movieSelect.options).forEach((option) => {
+            if (option.textContent === row.movie_title) {
+                option.selected = true;
+            }
         });
+    });
 
-        cinemaSelect.innerHTML = '';
-        movieSelect.innerHTML = '';
-        cinemaSelect.appendChild(cinemaFragment);
-        movieSelect.appendChild(movieFragment);
-
-    } catch (error) {
-        console.error('Error:', error);
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: 'Failed to load dropdown data'
-        });
-    }
-}
-
-// Handle edit button click
-$(document).on('click', '.edit-screening', async function() {
-    const screeningId = $(this).data('id');
-    const row = screeningTable.row($(this).closest('tr')).data();
-    
-    document.getElementById('edit_screening_id').value = screeningId;
-    
-    // Wait for dropdowns to be populated
-    await populateEditDropdowns();
-    
-    // Set the values
-    document.getElementById('edit_cinema_select').value = row.cinema_id;
-    document.getElementById('edit_movie_select').value = row.movie_id;
-    
-    // Format the date for datetime-local input
-    const screeningTime = new Date(row.screening_time);
-    const formattedTime = screeningTime.toISOString().slice(0, 16); // Format: YYYY-MM-DDThh:mm
-    document.getElementById('edit_screening_time').value = formattedTime;
-    
+    // Open the edit modal
     openEditModal();
 });
 
 // Handle restore screening
 $(document).on('click', '.restore-screening', function() {
-    const screeningId = $(this).data('id');
-    
+    const screeningId = $(this).attr('data-id');
+    if (!screeningId) {
+        console.error("Screening ID not found");
+        return;
+    }
+
     Swal.fire({
         title: 'Restore Screening?',
         text: "This will reactivate the screening!",
@@ -530,13 +475,13 @@ $(document).on('click', '.restore-screening', function() {
         confirmButtonText: 'Yes, restore it!'
     }).then((result) => {
         if (result.isConfirmed) {
-            restoreScreening(screeningId);
+            restoreScreeningStatus(screeningId);
         }
     });
 });
 
-// Function to restore screening
-async function restoreScreening(screeningId) {
+// Function to restore screening status
+async function restoreScreeningStatus(screeningId) {
     try {
         const response = await fetch(`${baseUrl()}/ScreeningsManagement/restore/${screeningId}`, {
             method: 'POST',
@@ -550,12 +495,7 @@ async function restoreScreening(screeningId) {
         const data = await response.json();
 
         if (data.success) {
-            Swal.fire(
-                'Restored!',
-                data.message,
-                'success'
-            );
-            // Reload the DataTable to reflect the changes
+            Swal.fire('Restored!', data.message, 'success');
             if (screeningTable) {
                 screeningTable.ajax.reload(null, false);
             }

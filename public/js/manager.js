@@ -19,15 +19,8 @@ function initializeManagerTable(filter = "") {
         processing: true,
         serverSide: true,
         scrollX: true,
-        columnDefs: [
-            {
-                targets: 6, // ID column
-                width: "50px",
-                className: "item-start",
-            },
-        ],
         columns: [
-            { data: "manager_id", name: "manager_id", title: "ID" },
+            { data: "manager_id", name: "manager_id", title: "ID", width: "50px" },
             { data: "first_name", name: "first_name", title: "First Name" },
             { data: "last_name", name: "last_name", title: "Last Name" },
             { data: "email", name: "email", title: "Email" },
@@ -43,35 +36,16 @@ function initializeManagerTable(filter = "") {
                 },
             },
             {
-                data: null,
+                data: 'action',
+                name: 'action',
                 title: "Actions",
                 orderable: false,
-                render: function (data, type, row) {
-                    let buttons = "";
-
-                    // Edit button - show for both active and inactive
-                    buttons += `<button class="edit-manager bg-blue-500 text-white px-2 py-1 rounded mr-2" data-id="${row.manager_id}">
-                        <i class="fas fa-edit"></i> Edit
-                    </button>`;
-
-                    // Show different buttons based on active status
-                    if (row.active == 1) {
-                        buttons += `<button class="delete-manager bg-red-500 text-white px-2 py-1 rounded" data-id="${row.manager_id}">
-                            <i class="fas fa-trash"></i> Deactivate
-                        </button>`;
-                    } else {
-                        buttons += `<button class="restore-manager bg-green-500 text-white px-2 py-1 rounded" data-id="${row.manager_id}">
-                            <i class="fas fa-undo"></i> Restore
-                        </button>`;
-                    }
-
-                    return buttons;
-                },
+                searchable: false,
+                width: "100px",
             },
         ],
-        order: [[0, "desc"]], // Order by ID descending
+        order: [[0, "desc"]],
         drawCallback: function () {
-            // Update the filter dropdown to match current state
             document.getElementById("filter").value = currentFilter;
         },
     });
@@ -84,7 +58,11 @@ document.getElementById("filter").addEventListener("change", function () {
 
 // Handle delete manager
 $(document).on("click", ".delete-manager", function () {
-    const managerId = $(this).data("id");
+    const managerId = $(this).attr("data-id");
+    if (!managerId) {
+        console.error("Manager ID not found");
+        return
+    }
 
     Swal.fire({
         title: "Are you sure?",
@@ -122,7 +100,6 @@ async function updateManagerStatus(managerId) {
 
         if (data.success) {
             Swal.fire("Deactivated!", data.message, "success");
-            // Reload the DataTable to reflect the changes
             if (managerTable) {
                 managerTable.ajax.reload(null, false);
             }
@@ -141,7 +118,11 @@ async function updateManagerStatus(managerId) {
 
 // Handle restore manager
 $(document).on("click", ".restore-manager", function () {
-    const managerId = $(this).data("id");
+    const managerId = $(this).attr("data-id");
+    if (!managerId) {
+        console.error("Manager ID not found");
+        return;
+    }
 
     Swal.fire({
         title: "Restore Manager?",
@@ -179,7 +160,6 @@ async function restoreManagerStatus(managerId) {
 
         if (data.success) {
             Swal.fire("Restored!", data.message, "success");
-            // Reload the DataTable to reflect the changes
             if (managerTable) {
                 managerTable.ajax.reload(null, false);
             }
@@ -188,13 +168,90 @@ async function restoreManagerStatus(managerId) {
         }
     } catch (error) {
         console.error("Error:", error);
-        Swal.fire(
-            "Error!",
-            error.message || "Failed to restore manager",
-            "error"
-        );
+        Swal.fire("Error!", error.message || "Failed to restore manager", "error");
     }
 }
+
+// Handle edit manager
+$(document).on("click", ".edit-manager", function () {
+    const managerId = $(this).attr("data-id");
+    if (!managerId) {
+        console.error("Manager ID not found");
+        return;
+    }
+    
+    const row = managerTable.row($(this).closest("tr")).data();
+
+    // Populate the edit form
+    document.getElementById("edit_manager_id").value = managerId;
+    document.getElementById("edit_first_name").value = row.first_name;
+    document.getElementById("edit_last_name").value = row.last_name;
+    document.getElementById("edit_email").value = row.email;
+    document.getElementById("edit_phonenumber").value = row.phonenumber;
+
+    // Open the edit modal
+    openEditModal();
+});
+
+// Edit Manager Form
+document
+    .getElementById("editManagerForm")
+    .addEventListener("submit", async function (e) {
+        e.preventDefault();
+
+        const formData = new FormData(this);
+        const managerId = formData.get("manager_id");
+        if (!managerId) {
+            console.error("Manager ID not found in form");
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                baseUrl() + `/ManagersManagement/update/${managerId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": document.querySelector(
+                            'meta[name="csrf-token"]'
+                        ).content,
+                        Accept: "application/json",
+                    },
+                    body: formData,
+                }
+            );
+
+            const data = await response.json();
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: data.message || "Manager updated successfully.",
+                });
+
+                closeEditModal();
+
+                // Refresh the table after updating a manager
+                if (managerTable) {
+                    managerTable.ajax.reload(null, false);
+                }
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: data.message || "Failed to update Manager.",
+                });
+            }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Unexpected Error",
+                text: "Something went wrong. Please try again.",
+            });
+        }
+    });
 
 // Modal Functions
 function openModal() {
@@ -205,6 +262,18 @@ function openModal() {
 
 function closeModal() {
     const modal = document.getElementById("addManagerModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
+
+function openEditModal() {
+    const modal = document.getElementById("editManagerModal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+function closeEditModal() {
+    const modal = document.getElementById("editManagerModal");
     modal.classList.add("hidden");
     modal.classList.remove("flex");
 }
@@ -266,87 +335,3 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 });
-
-//kuhaon ang value sa modal
-function openEditModal() {
-    const modal = document.getElementById("editManagerModal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-}
-
-function closeEditModal() {
-    const modal = document.getElementById("editManagerModal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-}
-
-$(document).on("click", ".edit-manager", function () {
-    const managerId = $(this).data("id");
-    const row = managerTable.row($(this).closest("tr")).data();
-
-    // Populate the edit form
-    document.getElementById("edit_manager_id").value = managerId;
-    document.getElementById("edit_first_name").value = row.first_name;
-    document.getElementById("edit_last_name").value = row.last_name;
-    document.getElementById("edit_email").value = row.email;
-    document.getElementById("edit_phonenumber").value = row.phonenumber;
-
-    // Open the edit modal
-    openEditModal();
-});
-
-// Edit Manager Form
-document
-    .getElementById("editManagerForm")
-    .addEventListener("submit", async function (e) {
-        e.preventDefault();
-
-        const formData = new FormData(this);
-        const managerId = formData.get("manager_id");
-
-        try {
-            const response = await fetch(
-                baseUrl() + `/ManagersManagement/update/${managerId}`,
-                {
-                    method: "POST",
-                    headers: {
-                        "X-CSRF-TOKEN": document.querySelector(
-                            'meta[name="csrf-token"]'
-                        ).content,
-                        Accept: "application/json",
-                    },
-                    body: formData,
-                }
-            );
-
-            const data = await response.json();
-
-            if (response.ok) {
-                Swal.fire({
-                    icon: "success",
-                    title: "Success",
-                    text: data.message || "Manager updated successfully.",
-                });
-
-                closeEditModal();
-
-                // Refresh the table after updating a manager
-                if (managerTable) {
-                    managerTable.ajax.reload(null, false);
-                }
-            } else {
-                Swal.fire({
-                    icon: "error",
-                    title: "Oops...",
-                    text: data.message || "Failed to update Manager.",
-                });
-            }
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Unexpected Error",
-                text: "Something went wrong. Please try again.",
-            });
-        }
-    });

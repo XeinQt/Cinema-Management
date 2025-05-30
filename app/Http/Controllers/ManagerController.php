@@ -27,7 +27,21 @@ class ManagerController extends Controller
         $query .= ' ORDER BY manager_id DESC';
         
         $managers = DB::select($query);
-        return DataTables::of($managers)->make(true);
+        return DataTables::of($managers)
+            ->addColumn('action', function($row) {
+                $buttons = '';
+                
+                if ($row->active == 1) {
+                     $buttons .= '<i class="fas fa-edit edit-manager" data-id="'.$row->manager_id.'"></i>';
+                    $buttons .= '<i class="fas fa-trash delete-manager" data-id="'.$row->manager_id.'"></i>';
+                } else {
+                    $buttons .= '<i class="fas fa-undo restore-manager" data-id="'.$row->manager_id.'"></i>';
+                }
+                
+                return $buttons;
+            })
+            ->rawColumns(['action'])
+            ->make(true);
     }
 
     public function store(Request $request)
@@ -49,6 +63,19 @@ class ManagerController extends Controller
             ], 422);
         }
 
+
+        // Check if mall with same fnamae, lname, email  and phono number exists (case-insensitive)
+        $existingManagerFnameAndLname = DB::select('
+            SELECT * FROM managers 
+            WHERE LOWER(first_name) = ? AND LOWER(last_name) = ?', 
+            [strtolower($request->first_name), strtolower($request->last_name)]
+        );
+
+        if (!empty($existingManagerFnameAndLname)) {
+            return response()->json([
+                'message' => 'A Manager with the same firstname, lastname already exists.'
+            ], 422);
+        }
         // Check if mall with same fnamae, lname, email  and phono number exists (case-insensitive)
         $existingManager = DB::select('
             SELECT * FROM managers 
@@ -118,75 +145,84 @@ class ManagerController extends Controller
             $request->validate([
                 'first_name' => 'required|string|max:255',
                 'last_name' => 'required|string|max:255',
-                'email' => 'required|string|max:255',
+                'email' => 'required|string|max:255|email',
                 'phonenumber' => 'required|string|max:255',
             ]);
 
-            // Check if manager exists
-            $manager = DB::select('SELECT * FROM managers WHERE manager_id = ?', [$id]);
-            if (empty($manager)) {
+            // Get current manager
+            $currentManager = DB::select('SELECT * FROM managers WHERE manager_id = ?', [$id]);
+            if (empty($currentManager)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Manager not found'
                 ], 404);
             }
-            
-            // Check if another mall has the same details (excluding current mall)
-            $existingManager = DB::select('
-                SELECT * FROM managers 
-                WHERE LOWER(first_name) = ? AND LOWER(last_name) = ? AND LOWER(email) = ? AND LOWER(phonenumber) = ? AND manager_id != ?',
-                [
-                    strtolower($request->first_name), 
-                    strtolower($request->last_name), 
-                    strtolower($request->email),
-                    strtolower($request->phonenumber),
-                    $id
-                ]
-            );
 
-            if (!empty($existingManager)) {
+            $currentManager = $currentManager[0];
+
+            // Check if any data is actually changing
+            if ($currentManager->first_name === $request->first_name && 
+                $currentManager->last_name === $request->last_name && 
+                $currentManager->email === $request->email && 
+                $currentManager->phonenumber === $request->phonenumber) {
                 return response()->json([
-                    'message' => 'Another manager with the same details already exists.'
-                ], 422);
+                    'success' => true,
+                    'message' => 'No changes were made to the manager.'
+                ]);
             }
 
-             // Check if another manager has the same email (excluding current manager)
-             $existingManagerEmail = DB::select('
-                SELECT * FROM managers 
-                WHERE LOWER(email) = ? AND manager_id != ?',
-                [
-                    strtolower($request->email), 
-                    $id
-                ]
-            );
+            // Check if email is being changed
+            if (strtolower($currentManager->email) !== strtolower($request->email)) {
+                $existingManagerEmail = DB::select('
+                    SELECT * FROM managers 
+                    WHERE LOWER(email) = ? 
+                    AND manager_id != ?',
+                    [
+                        strtolower($request->email),
+                        $id
+                    ]
+                );
 
-            if (!empty($existingManagerEmail)) {
-                return response()->json([
-                    'message' => 'Another manager with the same email already exists.'
-                ], 422);
+                if (!empty($existingManagerEmail)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Another manager with the same email already exists.'
+                    ], 422);
+                }
             }
 
-             // Check if another manager has the same email (excluding current manager)
-             $existingManagerFnameAndLname = DB::select('
-                SELECT * FROM managers 
-                WHERE LOWER(first_name) = ? AND LOWER(last_name) = ? AND manager_id != ?',
-                [
-                    strtolower($request->first_name), 
-                    strtolower($request->last_name), 
-                    $id
-                ]
-            );
+            // Check if name combination is being changed
+            if (strtolower($currentManager->first_name) !== strtolower($request->first_name) || 
+                strtolower($currentManager->last_name) !== strtolower($request->last_name)) {
+                
+                $existingManagerName = DB::select('
+                    SELECT * FROM managers 
+                    WHERE LOWER(first_name) = ? 
+                    AND LOWER(last_name) = ? 
+                    AND manager_id != ?',
+                    [
+                        strtolower($request->first_name),
+                        strtolower($request->last_name),
+                        $id
+                    ]
+                );
 
-            if (!empty($existingManagerFnameAndLname)) {
-                return response()->json([
-                    'message' => 'Another manager with the same firstname and lastname already exists.'
-                ], 422);
+                if (!empty($existingManagerName)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Another manager with the same first name and last name already exists.'
+                    ], 422);
+                }
             }
 
             // Update the manager
             DB::update('
                 UPDATE managers 
-                SET first_name = ?, last_name = ?, email = ?, phonenumber = ?, updated_at = NOW() 
+                SET first_name = ?, 
+                    last_name = ?, 
+                    email = ?, 
+                    phonenumber = ?, 
+                    updated_at = NOW() 
                 WHERE manager_id = ?',
                 [
                     $request->first_name,

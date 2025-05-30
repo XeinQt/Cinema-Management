@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Cinemas') }}
+            {{ __('Cinemas Management') }}
         </h2>
     </x-slot>
 
@@ -42,11 +42,10 @@
             <form id="addCinemaForm">
                 @csrf
 
-                {{-- mall name --}}
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300 mb-2">Mall</label>
                     <select 
-                        name="name" 
+                        name="mall_id" 
                         id="mall_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -58,7 +57,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Manager</label>
                     <select 
-                        name="manager_full_name" 
+                        name="manager_id" 
                         id="manager_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -71,7 +70,7 @@
                     <label class="block text-gray-700 dark:text-gray-300">Cinema Name</label>
                     <input 
                         type="text" 
-                        name="cinema_name" 
+                        name="name" 
                         class="w-full px-3 py-2 border rounded" 
                         placeholder="Enter cinema name (e.g., IMAX Theater 1, VIP Cinema 2)"
                         required
@@ -122,7 +121,7 @@
                     <label class="block text-gray-700 dark:text-gray-300">Cinema Name</label>
                     <input 
                         type="text" 
-                        name="cinema_name" 
+                        name="name" 
                         id="edit_cinema_name"
                         class="w-full px-3 py-2 border rounded" 
                         placeholder="Enter cinema name"
