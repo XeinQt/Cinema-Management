@@ -122,6 +122,94 @@
         </div>
     </div>
 
+    <!-- Edit Booking Modal -->
+    <div id="editBookingModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-900 p-6 rounded-md w-full max-w-md">
+            <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Edit Booking</h2>
+
+            <form id="editBookingForm">
+                @csrf
+                <input type="hidden" name="booking_id" id="edit_booking_id">
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Customer Full Name</label>
+                    <input 
+                        type="text" 
+                        name="customer_full_name" 
+                        id="edit_customer_full_name" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter first and last name"
+                        required
+                    >
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Cinema</label>
+                    <select 
+                        name="cinema_name" 
+                        id="edit_cinema_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Cinema</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Movie</label>
+                    <select 
+                        name="movie_title" 
+                        id="edit_movie_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Movie</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Date & Time</label>
+                    <select 
+                        name="time" 
+                        id="edit_screening_time" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                        disabled
+                    >
+                        <option value="">Select movie and cinema first</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Seat Number</label>
+                    <input 
+                        type="text" 
+                        name="seat_number" 
+                        id="edit_seat_number" 
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter seat number (e.g., A1, B12, C5)"
+                        required
+                    >
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Status</label>
+                    <select name="status" id="edit_status" class="w-full px-3 py-2 border rounded" required>
+                        <option value="">Select Status</option>
+                        <option value="confirmed">Confirmed</option>
+                        <option value="pending">Pending</option>
+                        <option value="cancelled">Cancelled</option>
+                    </select>
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </x-app-layout>
 
 <!-- Scripts -->

@@ -14,7 +14,24 @@ class BookingController extends Controller
     }
 
     public function dataTables() {
-        $bookings = DB::select('SELECT * FROM booking');
+        $bookings = DB::select('
+            SELECT 
+                b.*,
+                CONCAT(c.first_name, " ", c.last_name) as customer_name,
+                cin.name as cinema_name,
+                cin.cinema_id,
+                m.title as movie_title,
+                m.movie_id,
+                s.screening_time,
+                s.screening_id
+            FROM booking b
+            JOIN customer c ON b.customer_id = c.customer_id
+            JOIN screenings s ON b.screening_id = s.screening_id
+            JOIN cinemas cin ON s.cinema_id = cin.cinema_id
+            JOIN movies m ON s.movie_id = m.movie_id
+            WHERE b.active = 1
+            ORDER BY b.booking_id DESC
+        ');
         return DataTables::of($bookings)->make(true);
     }
 
@@ -154,6 +171,139 @@ class BookingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to deactivate booking: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update($id, Request $request)
+    {
+        try {
+            // Basic request validation
+            $request->validate([
+                'customer_full_name' => 'required|string|max:255',
+                'cinema_name' => 'required|numeric',
+                'movie_title' => 'required|numeric',
+                'time' => 'required|numeric', // This is now screening_id
+                'seat_number' => 'required|string|max:10',
+                'status' => 'required|in:confirmed,pending,cancelled'
+            ]);
+
+            return DB::transaction(function () use ($request, $id) {
+                // Check if booking exists
+                $booking = DB::select('SELECT * FROM booking WHERE booking_id = ? AND active = 1', [$id]);
+                if (empty($booking)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Booking not found or is inactive'
+                    ], 404);
+                }
+
+                // Get customer ID from full name
+                $nameParts = explode(' ', trim($request->customer_full_name));
+                if (count($nameParts) < 2) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please provide both first and last name'
+                    ], 400);
+                }
+
+                $firstName = $nameParts[0];
+                $lastName = end($nameParts);
+
+                $customer = DB::select("
+                    SELECT customer_id 
+                    FROM customer 
+                    WHERE LOWER(first_name) = LOWER(?) 
+                    AND LOWER(last_name) = LOWER(?)", 
+                    [$firstName, $lastName]
+                );
+
+                if (empty($customer)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Customer not found. Please register the customer first.'
+                    ], 404);
+                }
+
+                // Check if screening exists
+                $screening = DB::select('
+                    SELECT * FROM screenings 
+                    WHERE screening_id = ? 
+                    AND cinema_id = ? 
+                    AND movie_id = ? 
+                    AND active = 1', 
+                    [
+                        $request->time, // This is screening_id
+                        $request->cinema_name, // This is cinema_id
+                        $request->movie_title  // This is movie_id
+                    ]
+                );
+
+                if (empty($screening)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Invalid screening selection. Please check cinema, movie and time.'
+                    ], 404);
+                }
+
+                // Check if seat is available (excluding current booking)
+                $existingBooking = DB::select('
+                    SELECT booking_id 
+                    FROM booking 
+                    WHERE screening_id = ? 
+                    AND set_number = ? 
+                    AND booking_id != ? 
+                    AND status != ? 
+                    AND active = 1', 
+                    [
+                        $request->time,
+                        $request->seat_number,
+                        $id,
+                        'cancelled'
+                    ]
+                );
+
+                if (!empty($existingBooking)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This seat is already booked.'
+                    ], 409);
+                }
+
+                // Update the booking
+                DB::update('
+                    UPDATE booking 
+                    SET customer_id = ?,
+                        screening_id = ?,
+                        set_number = ?,
+                        status = ?,
+                        updated_at = NOW()
+                    WHERE booking_id = ?',
+                    [
+                        $customer[0]->customer_id,
+                        $request->time, // screening_id
+                        $request->seat_number,
+                        $request->status,
+                        $id
+                    ]
+                );
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Booking updated successfully'
+                ]);
+            });
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update booking: ' . $e->getMessage()
             ], 500);
         }
     }

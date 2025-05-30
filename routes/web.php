@@ -57,6 +57,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/BookingsManagement/DataTables', [BookingController::class, 'dataTables'])->name('bookings.dataTables');
     Route::post('/BookingsManagement/create', [BookingController::class, 'store'])->name('bookings.store');
     Route::post('/BookingsManagement/updateStatus/{id}', [BookingController::class,'updateStatus'])->name('bookings.updateStatus');
+    Route::post('/BookingsManagement/update/{id}', [BookingController::class, 'update'])->name('bookings.update');
 
     Route::get('/CustomersManagement', [CustomerController::class, 'list'])->name('customers');
     Route::get('/CustomersManagement/DataTables', [CustomerController::class, 'dataTables'])->name('customers.dataTables');
