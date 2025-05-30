@@ -15,7 +15,16 @@ class CinemasController extends Controller
 
     public function dataTables()
     {
-        $cinemas = DB::select('SELECT * FROM cinemas WHERE active = 1');
+        $cinemas = DB::select('
+            SELECT 
+                c.*,
+                m.name as mall_name,
+                CONCAT(mg.first_name, " ", mg.last_name) as manager_full_name
+            FROM cinemas c
+            JOIN malls m ON c.mall_id = m.mall_id
+            JOIN managers mg ON c.manager_id = mg.manager_id
+            WHERE c.active = 1
+        ');
         return DataTables::of($cinemas)->make(true);
     }
 
@@ -131,6 +140,79 @@ class CinemasController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to deactivate cinema: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function update($id, Request $request)
+    {
+        try {
+            $request->validate([
+                'mall_id' => 'required|integer',
+                'manager_id' => 'required|integer',
+                'cinema_name' => 'required|string|max:255',
+            ]);
+
+            return DB::transaction(function () use ($request, $id) {
+                // Check if cinema exists
+                $cinema = DB::select('SELECT * FROM cinemas WHERE cinema_id = ? AND active = 1', [$id]);
+                if (empty($cinema)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cinema not found or is inactive',
+                    ], 404);
+                }
+
+                // Check if mall exists and is active
+                $mall = DB::select('SELECT mall_id FROM malls WHERE mall_id = ? AND active = 1 LIMIT 1', [$request->mall_id]);
+                if (empty($mall)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Mall not found or is inactive',
+                    ], 404);
+                }
+
+                // Check if manager exists and is active
+                $manager = DB::select('SELECT manager_id FROM managers WHERE manager_id = ? AND active = 1 LIMIT 1', [$request->manager_id]);
+                if (empty($manager)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Manager not found or is inactive',
+                    ], 404);
+                }
+
+                // Check if cinema name exists for other cinemas
+                $existingCinema = DB::select('SELECT * FROM cinemas WHERE name = ? AND cinema_id != ? AND active = 1', [$request->cinema_name, $id]);
+                if (!empty($existingCinema)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cinema name already exists.',
+                    ], 409);
+                }
+
+                // Update the cinema
+                DB::update('UPDATE cinemas SET mall_id = ?, manager_id = ?, name = ?, updated_at = NOW() WHERE cinema_id = ?', [
+                    $request->mall_id,
+                    $request->manager_id,
+                    $request->cinema_name,
+                    $id
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Cinema updated successfully',
+                ]);
+            });
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update cinema: ' . $e->getMessage(),
             ], 500);
         }
     }

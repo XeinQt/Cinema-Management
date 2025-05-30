@@ -86,7 +86,57 @@
         </div>
     </div>
 
+    <!-- Edit Cinema Modal -->
+    <div id="editCinemaModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white dark:bg-gray-900 p-6 rounded-md w-full max-w-md">
+            <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Edit Cinema</h2>
+            <form id="editCinemaForm">
+                @csrf
+                <input type="hidden" id="edit_cinema_id" name="cinema_id">
 
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300 mb-2">Mall</label>
+                    <select 
+                        name="mall_id" 
+                        id="edit_mall_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Mall</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Manager</label>
+                    <select 
+                        name="manager_id" 
+                        id="edit_manager_select" 
+                        class="w-full px-3 py-2 border rounded" 
+                        required
+                    >
+                        <option value="">Select Manager</option>
+                    </select>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-gray-700 dark:text-gray-300">Cinema Name</label>
+                    <input 
+                        type="text" 
+                        name="cinema_name" 
+                        id="edit_cinema_name"
+                        class="w-full px-3 py-2 border rounded" 
+                        placeholder="Enter cinema name"
+                        required
+                    >
+                </div>
+
+                <div class="flex justify-end">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 </x-app-layout>
 

@@ -33,6 +33,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/CinemasManagement/DataTables', [CinemasController::class, 'dataTables'])->name('cinemas.dataTables');
     Route::post('/CinemasManagement/create', [CinemasController::class, 'store'])->name('cinemas.store');
     Route::post('/CinemasManagement/updateStatus/{id}', [CinemasController::class, 'updateStatus'])->name('cinemas.updateStatus');
+    Route::post('/CinemasManagement/update/{id}', [CinemasController::class, 'update'])->name('cinemas.update');
 
     Route::get('/ManagersManagement', [ManagerController::class, 'list'])->name('managers');
     Route::get('/ManagersManagement/DataTables', [ManagerController::class, 'dataTables'])->name('managers.dataTables');
