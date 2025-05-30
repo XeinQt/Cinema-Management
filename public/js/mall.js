@@ -1,13 +1,21 @@
 let mallTable;
+let currentFilter = '';
 
-function initializeMallTable() {
+function initializeMallTable(filter = '') {
+    currentFilter = filter;
+    
     // Destroy existing DataTable if it exists
     if ($.fn.DataTable.isDataTable('#mallsDatatables')) {
         $('#mallsDatatables').DataTable().destroy();
     }
 
     mallTable = $('#mallsDatatables').DataTable({
-        ajax: baseUrl() + '/MallsManagement/DataTables',
+        ajax: {
+            url: baseUrl() + '/MallsManagement/DataTables',
+            data: function(d) {
+                d.filter = filter;
+            }
+        },
         processing: true,
         serverSide: true,
         columns: [
@@ -16,18 +24,54 @@ function initializeMallTable() {
             { data: 'location', name: 'location', title: 'Location' },
             { data: 'description', name: 'description', title: 'Description' },
             {
+                data: 'active',
+                name: 'active',
+                title: 'Status',
+                render: function(data) {
+                    return data == 1 ? 
+                        '<span class="px-2 py-1 bg-green-500 text-white rounded-full text-sm">Active</span>' : 
+                        '<span class="px-2 py-1 bg-red-500 text-white rounded-full text-sm">Inactive</span>';
+                }
+            },
+            {
                 data: null,
                 title: 'Actions',
                 orderable: false,
                 render: function(data, type, row) {
-                    return getActionButtons(row.mall_id, 'mall');
+                    let buttons = '';
+                    
+                    // Edit button - show for both active and inactive
+                    buttons += `<button class="edit-mall bg-blue-500 text-white px-2 py-1 rounded mr-2" data-id="${row.mall_id}">
+                        <i class="fas fa-edit"></i> Edit
+                    </button>`;
+
+                    // Show different buttons based on active status
+                    if (row.active == 1) {
+                        buttons += `<button class="delete-mall bg-red-500 text-white px-2 py-1 rounded" data-id="${row.mall_id}">
+                            <i class="fas fa-trash"></i> Deactivate
+                        </button>`;
+                    } else {
+                        buttons += `<button class="restore-mall bg-green-500 text-white px-2 py-1 rounded" data-id="${row.mall_id}">
+                            <i class="fas fa-undo"></i> Restore
+                        </button>`;
+                    }
+                    
+                    return buttons;
                 }
             }
-        ]
+        ],
+        order: [[0, 'desc']], // Order by ID descending
+        drawCallback: function() {
+            // Update the filter dropdown to match current state
+            document.getElementById('filter').value = currentFilter;
+        }
     });
 }
 
-
+// Handle filter change
+document.getElementById('filter').addEventListener('change', function() {
+    initializeMallTable(this.value);
+});
 
 // Handle delete mall
 $(document).on('click', '.delete-mall', function() {
@@ -80,6 +124,62 @@ async function updateMallStatus(mallId) {
         Swal.fire(
             'Error!',
             error.message || 'Failed to update mall status',
+            'error'
+        );
+    }
+}
+
+// Handle restore mall
+$(document).on('click', '.restore-mall', function() {
+    const mallId = $(this).data('id');
+    
+    Swal.fire({
+        title: 'Restore Mall?',
+        text: "This will reactivate the mall!",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, restore it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            restoreMallStatus(mallId);
+        }
+    });
+});
+
+// Function to restore mall status
+async function restoreMallStatus(mallId) {
+    try {
+        const response = await fetch(`${baseUrl()}/MallsManagement/restore/${mallId}`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Swal.fire(
+                'Restored!',
+                data.message,
+                'success'
+            );
+            // Reload the DataTable to reflect the changes
+            if (mallTable) {
+                mallTable.ajax.reload(null, false);
+            }
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire(
+            'Error!',
+            error.message || 'Failed to restore mall',
             'error'
         );
     }

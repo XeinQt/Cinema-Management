@@ -22,7 +22,7 @@ class BookingSeeder extends Seeder
                 'customer_id' => $faker->randomElement($customer_ids), // Assuming customer IDs range from 1 to 1000
                 'screening_id' => $faker->randomElement($screening_ids),  // Assuming screening IDs range from 1 to 100
                 'set_number' => $faker->word(),
-                'status' => $faker->randomElement(['pending', 'confirmed', 'cancelled']),
+                'status' => $faker->randomElement(['confirmed', 'cancelled']),
                 'active' => $faker->numberBetween(0,1),
                 'created_at' => $faker->dateTimeThisYear(),
                 'updated_at' => $faker->dateTimeThisYear(),

@@ -41,7 +41,7 @@
         <div class="bg-white dark:bg-gray-900 p-6 rounded-md w-full max-w-md">
             <h2 class="text-xl mb-4 text-gray-800 dark:text-gray-100">Add Booking</h2>
 
-            <form id="addBooking">
+            <form id="addBookingForm">
                 @csrf
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300 mb-2">Customer Full Name</label>
@@ -58,7 +58,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Cinema</label>
                     <select 
-                        name="cinema_name" 
+                        name="cinema_select" 
                         id="cinema_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -70,7 +70,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Movie</label>
                     <select 
-                        name="movie_title" 
+                        name="movie_select" 
                         id="movie_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -109,14 +109,13 @@
                     <select name="status" id="status" class="w-full px-3 py-2 border rounded" required>
                         <option value="">Select Status</option>
                         <option value="confirmed">Confirmed</option>
-                        <option value="peding">Pending</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
 
                 <div class="flex justify-end">
                     <button type="button" onclick="closeModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
+                    <button type="submit"class="px-4 py-2 bg-green-600 text-white rounded">Save</button>
                 </div>
             </form>
         </div>
@@ -146,7 +145,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Cinema</label>
                     <select 
-                        name="cinema_name" 
+                        name="cinema_select" 
                         id="edit_cinema_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -158,7 +157,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Movie</label>
                     <select 
-                        name="movie_title" 
+                        name="movie_select" 
                         id="edit_movie_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -197,14 +196,13 @@
                     <select name="status" id="edit_status" class="w-full px-3 py-2 border rounded" required>
                         <option value="">Select Status</option>
                         <option value="confirmed">Confirmed</option>
-                        <option value="pending">Pending</option>
                         <option value="cancelled">Cancelled</option>
                     </select>
                 </div>
 
                 <div class="flex justify-end">
                     <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Update</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Update</button>
                 </div>
             </form>
         </div>

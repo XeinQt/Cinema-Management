@@ -11,10 +11,23 @@ class ManagerController extends Controller
        
         return view('manager.list');
     }
-     public function dataTables ()
+     public function dataTables(Request $request)
     {
-      $managers = DB::select('SELECT * FROM managers  WHERE active = 1');
-       return DataTables::of($managers)->make(true);
+        $filter = $request->input('filter', '');
+        
+        $query = 'SELECT * FROM managers';
+        
+        // Apply filter
+        if ($filter === 'active') {
+            $query .= ' WHERE active = 1';
+        } elseif ($filter === 'inactive') {
+            $query .= ' WHERE active = 0';
+        }
+        
+        $query .= ' ORDER BY manager_id DESC';
+        
+        $managers = DB::select($query);
+        return DataTables::of($managers)->make(true);
     }
 
     public function store(Request $request)
@@ -193,6 +206,34 @@ class ManagerController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update manager: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function restore($id)
+    {
+        try {
+            $manager = DB::select('SELECT * FROM managers WHERE manager_id = ?', [$id]);
+            
+            if (empty($manager)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Manager not found'
+                ], 404);
+            }
+
+            // Update the active status to 1
+            DB::update('UPDATE managers SET active = 1, updated_at = NOW() WHERE manager_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Manager has been restored successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore manager: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -1,11 +1,14 @@
 let screeningTable;
+let currentFilter = "";
 
 const dropdownCache = {
     cinemas: null,
     movies: null
 };
 
-function initializeScreeningTable() {
+function initializeScreeningTable(filter = "") {
+    currentFilter = filter;
+
     // Destroy existing DataTable if it exists
     if ($.fn.DataTable.isDataTable('#screeningTable')) {
         $('#screeningTable').DataTable().destroy();
@@ -15,6 +18,10 @@ function initializeScreeningTable() {
         ajax: {
             url: baseUrl() + "/ScreeningsManagement/DataTables",
             type: 'GET',
+            data: function(d) {
+                d.filter = filter;
+                return d;
+            },
             error: function(xhr, error, thrown) {
                 console.error('DataTables error:', error);
                 Swal.fire({
@@ -53,11 +60,41 @@ function initializeScreeningTable() {
                 }
             },
             {
+                data: "active",
+                name: "active",
+                title: "Status",
+                render: function(data) {
+                    return data == 1
+                        ? '<span class="px-2 py-1 bg-green-500 text-white rounded-full text-sm">Active</span>'
+                        : '<span class="px-2 py-1 bg-red-500 text-white rounded-full text-sm">Inactive</span>';
+                }
+            },
+            {
                 data: null,
                 title: "Actions",
+                className: "items-start",
                 orderable: false,
                 render: function(data, type, row) {
-                    return getActionButtons(row.screening_id, 'screening');
+                    let buttons = '<div class="flex space-x-2">';
+                    
+                    // Edit button - show for both active and inactive
+                    buttons += `<button class="edit-screening inline-flex items-center bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded" data-id="${row.screening_id}">
+                        <i class="fas fa-edit mr-1"></i> Edit
+                    </button>`;
+
+                    // Show different buttons based on active status
+                    if (row.active == 1) {
+                        buttons += `<button class="delete-screening inline-flex items-center bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded" data-id="${row.screening_id}">
+                            <i class="fas fa-trash mr-1"></i> Deactivate
+                        </button>`;
+                    } else {
+                        buttons += `<button class="restore-screening inline-flex items-center bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded" data-id="${row.screening_id}">
+                            <i class="fas fa-undo mr-1"></i> Restore
+                        </button>`;
+                    }
+                    
+                    buttons += '</div>';
+                    return buttons;
                 }
             }
         ],
@@ -65,21 +102,27 @@ function initializeScreeningTable() {
             {
                 targets: 0, // ID column
                 width: '50px',
-                className: 'text-center'
+                className: 'text-left'
             },
             {
                 targets: [1, 2], // Cinema and Movie columns
-                width: '200px'
+                width: '200px',
+                className: 'text-left'
             },
             {
                 targets: 3, // Screening Time column
                 width: '150px',
-                className: 'text-center'
+                className: 'text-left'
+            },
+            {
+                targets: 4, // Status column
+                width: '100px',
+                className: 'text-left'
             },
             {
                 targets: -1, // Actions column
                 width: '150px',
-                className: 'text-center'
+                className: 'text-left flex justify-start'
             }
         ],
         dom: '<"top"lf>rt<"bottom"ip><"clear">',
@@ -140,6 +183,11 @@ function initializeScreeningTable() {
         </style>
     `);
 }
+
+// Handle filter change
+document.getElementById("filter").addEventListener("change", function() {
+    initializeScreeningTable(this.value);
+});
 
 // Handle delete screening
 $(document).on('click', '.delete-screening', function() {
@@ -215,10 +263,17 @@ function closeModal() {
 document.addEventListener('DOMContentLoaded', function() {
     initializeScreeningTable();
     
-    document.getElementById("addScreeningForm")?.addEventListener("submit", async function (e) {
+    document.getElementById("addScreeningForm")?.addEventListener("submit", async function(e) {
         e.preventDefault();
 
         const formData = new FormData(this);
+        
+        // Format the datetime-local value to proper MySQL datetime format
+        const screeningTime = formData.get('time');
+        if (screeningTime) {
+            const date = new Date(screeningTime);
+            formData.set('time', date.toISOString().slice(0, 19).replace('T', ' '));
+        }
 
         try {
             const response = await fetch(baseUrl() + "/ScreeningsManagement/create", {
@@ -234,9 +289,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok) {
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: data.message || 'Screening added successfully.'
+                    icon: "success",
+                    title: "Success",
+                    text: data.message || "Screening added successfully.",
                 });
 
                 this.reset();
@@ -250,8 +305,62 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 Swal.fire({
                     icon: "error",
-                    title: "Oops...",
-                    text: data.message || "Failed to add Screening.",
+                    title: "Error",
+                    text: data.message || "Failed to add screening.",
+                });
+            }
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Unexpected Error",
+                text: "Something went wrong. Please try again.",
+            });
+        }
+    });
+
+    // Add event listener for edit form
+    document.getElementById("editScreeningForm")?.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const screeningId = formData.get('screening_id');
+        
+        // Format the datetime-local value
+        const screeningTime = formData.get('time');
+        if (screeningTime) {
+            const date = new Date(screeningTime);
+            formData.set('time', date.toISOString().slice(0, 19).replace('T', ' '));
+        }
+
+        try {
+            const response = await fetch(`${baseUrl()}/ScreeningsManagement/update/${screeningId}`, {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                    Accept: "application/json",
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: data.message || "Screening updated successfully.",
+                });
+
+                closeEditModal();
+                if (screeningTable) {
+                    screeningTable.ajax.reload(null, false);
+                }
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Error",
+                    text: data.message || "Failed to update screening.",
                 });
             }
         } catch (error) {
@@ -287,12 +396,18 @@ async function populateDropdowns() {
         if (!dropdownCache.cinemas) dropdownCache.cinemas = cinemasData;
         if (!dropdownCache.movies) dropdownCache.movies = moviesData;
 
-        cinemasData.data.forEach(cinema => {
-            cinemaFragment.appendChild(new Option(cinema.name, cinema.name));
+        // Filter for active cinemas only
+        const activeCinemas = cinemasData.data.filter(cinema => cinema.active === 1);
+        activeCinemas.forEach(cinema => {
+            const option = new Option(cinema.name, cinema.cinema_id);
+            cinemaFragment.appendChild(option);
         });
 
-        moviesData.data.forEach(movie => {
-            movieFragment.appendChild(new Option(movie.title, movie.title));
+        // Filter for active movies only
+        const activeMovies = moviesData.data.filter(movie => movie.active === 1);
+        activeMovies.forEach(movie => {
+            const option = new Option(movie.title, movie.movie_id);
+            movieFragment.appendChild(option);
         });
 
         cinemaSelect.innerHTML = '';
@@ -350,12 +465,18 @@ async function populateEditDropdowns() {
         if (!dropdownCache.cinemas) dropdownCache.cinemas = cinemasData;
         if (!dropdownCache.movies) dropdownCache.movies = moviesData;
 
-        cinemasData.data.forEach(cinema => {
-            cinemaFragment.appendChild(new Option(cinema.name, cinema.name));
+        // Filter for active cinemas only
+        const activeCinemas = cinemasData.data.filter(cinema => cinema.active === 1);
+        activeCinemas.forEach(cinema => {
+            const option = new Option(cinema.name, cinema.cinema_id);
+            cinemaFragment.appendChild(option);
         });
 
-        moviesData.data.forEach(movie => {
-            movieFragment.appendChild(new Option(movie.title, movie.title));
+        // Filter for active movies only
+        const activeMovies = moviesData.data.filter(movie => movie.active === 1);
+        activeMovies.forEach(movie => {
+            const option = new Option(movie.title, movie.movie_id);
+            movieFragment.appendChild(option);
         });
 
         cinemaSelect.innerHTML = '';
@@ -368,99 +489,85 @@ async function populateEditDropdowns() {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Failed to load cinema and movie data'
+            text: 'Failed to load dropdown data'
         });
     }
 }
 
 // Handle edit button click
-$(document).on('click', '.edit-screening', function() {
+$(document).on('click', '.edit-screening', async function() {
     const screeningId = $(this).data('id');
     const row = screeningTable.row($(this).closest('tr')).data();
     
-    // Set form values
     document.getElementById('edit_screening_id').value = screeningId;
+    
+    // Wait for dropdowns to be populated
+    await populateEditDropdowns();
+    
+    // Set the values
+    document.getElementById('edit_cinema_select').value = row.cinema_id;
+    document.getElementById('edit_movie_select').value = row.movie_id;
     
     // Format the date for datetime-local input
     const screeningTime = new Date(row.screening_time);
-    const formattedTime = screeningTime.toISOString().slice(0, 16); // Format: YYYY-MM-DDTHH:mm
+    const formattedTime = screeningTime.toISOString().slice(0, 16); // Format: YYYY-MM-DDThh:mm
     document.getElementById('edit_screening_time').value = formattedTime;
     
-    // Open modal and populate dropdowns
     openEditModal();
-    
-    // Set selected values after dropdowns are populated
-    const checkDropdowns = setInterval(() => {
-        const cinemaSelect = document.getElementById('edit_cinema_select');
-        const movieSelect = document.getElementById('edit_movie_select');
-        
-        if (cinemaSelect.options.length > 1 && movieSelect.options.length > 1) {
-            clearInterval(checkDropdowns);
-            
-            // Find and select the cinema option
-            Array.from(cinemaSelect.options).forEach(option => {
-                if (option.value === row.cinema_name) {
-                    option.selected = true;
-                }
-            });
-            
-            // Find and select the movie option
-            Array.from(movieSelect.options).forEach(option => {
-                if (option.value === row.movie_title) {
-                    option.selected = true;
-                }
-            });
-        }
-    }, 100);
 });
 
-// Handle edit form submission
-document.getElementById("editScreeningForm")?.addEventListener("submit", async function(e) {
-    e.preventDefault();
+// Handle restore screening
+$(document).on('click', '.restore-screening', function() {
+    const screeningId = $(this).data('id');
     
-    const screeningId = document.getElementById('edit_screening_id').value;
-    const formData = new FormData(this);
-    
+    Swal.fire({
+        title: 'Restore Screening?',
+        text: "This will reactivate the screening!",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, restore it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            restoreScreening(screeningId);
+        }
+    });
+});
+
+// Function to restore screening
+async function restoreScreening(screeningId) {
     try {
-        const response = await fetch(`${baseUrl()}/ScreeningsManagement/update/${screeningId}`, {
-            method: "POST",
+        const response = await fetch(`${baseUrl()}/ScreeningsManagement/restore/${screeningId}`, {
+            method: 'POST',
             headers: {
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                "Accept": "application/json"
-            },
-            body: formData
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            }
         });
 
         const data = await response.json();
 
-        if (response.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: data.message || 'Screening updated successfully.'
-            });
-
-            closeEditModal();
+        if (data.success) {
+            Swal.fire(
+                'Restored!',
+                data.message,
+                'success'
+            );
+            // Reload the DataTable to reflect the changes
             if (screeningTable) {
                 screeningTable.ajax.reload(null, false);
             }
         } else {
-            let errorMessage = data.message || "Failed to update Screening.";
-            if (data.errors) {
-                errorMessage = Object.values(data.errors).flat().join('\n');
-            }
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: errorMessage
-            });
+            throw new Error(data.message);
         }
     } catch (error) {
-        console.error("Fetch Error:", error);
-        Swal.fire({
-            icon: "error",
-            title: "Unexpected Error",
-            text: "Network error or server is not responding. Please try again."
-        });
+        console.error('Error:', error);
+        Swal.fire(
+            'Error!',
+            error.message || 'Failed to restore screening',
+            'error'
+        );
     }
-});
+}

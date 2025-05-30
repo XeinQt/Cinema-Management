@@ -14,10 +14,23 @@ class MallsController extends Controller
         return view('malls.list');
     }
 
-    public function dataTables ()
+    public function dataTables(Request $request)
     {
-       $malls = DB::select('SELECT * FROM malls WHERE active = 1'); 
-       return DataTables::of($malls)->make(true);
+        $filter = $request->input('filter', '');
+        
+        $query = 'SELECT * FROM malls';
+        
+        // Apply filter
+        if ($filter === 'active') {
+            $query .= ' WHERE active = 1';
+        } elseif ($filter === 'inactive') {
+            $query .= ' WHERE active = 0';
+        }
+        
+        $query .= ' ORDER BY mall_id DESC';
+        
+        $malls = DB::select($query);
+        return DataTables::of($malls)->make(true);
     }
 
    public function store(Request $request)
@@ -144,6 +157,34 @@ class MallsController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update mall: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function restore($id)
+    {
+        try {
+            $mall = DB::select('SELECT * FROM malls WHERE mall_id = ?', [$id]);
+            
+            if (empty($mall)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mall not found'
+                ], 404);
+            }
+
+            // Update the active status to 1
+            DB::update('UPDATE malls SET active = 1, updated_at = NOW() WHERE mall_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Mall has been restored successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore mall: ' . $e->getMessage()
             ], 500);
         }
     }

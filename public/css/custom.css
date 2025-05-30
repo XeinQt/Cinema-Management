@@ -6,6 +6,13 @@
     width: 150px;
 }
 
+#bookingTable td:nth-child(7) > div, #bookingTable td:nth-child(8) > div {
+    margin-left: 31px;
+}
+
+.edit-booking {
+    margin-left: 36px;
+}
 /* DataTables Wrapper */
 .dataTables_wrapper {
     padding: 20px;

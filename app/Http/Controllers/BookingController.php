@@ -13,9 +13,11 @@ class BookingController extends Controller
         return view('bookings.list');
     }
 
-    public function dataTables() {
-        $bookings = DB::select('
-            SELECT 
+    public function dataTables(Request $request) {
+        $filter = $request->input('filter', '');
+        $status_filter = $request->input('status_filter', '');
+        
+        $query = 'SELECT 
                 b.*,
                 CONCAT(c.first_name, " ", c.last_name) as customer_name,
                 cin.name as cinema_name,
@@ -25,13 +27,31 @@ class BookingController extends Controller
                 s.screening_time,
                 s.screening_id
             FROM booking b
-            JOIN customer c ON b.customer_id = c.customer_id
-            JOIN screenings s ON b.screening_id = s.screening_id
-            JOIN cinemas cin ON s.cinema_id = cin.cinema_id
-            JOIN movies m ON s.movie_id = m.movie_id
-            WHERE b.active = 1
-            ORDER BY b.booking_id DESC
-        ');
+            JOIN customer c ON b.customer_id = c.customer_id AND c.active = 1
+            JOIN screenings s ON b.screening_id = s.screening_id AND s.active = 1
+            JOIN cinemas cin ON s.cinema_id = cin.cinema_id AND cin.active = 1
+            JOIN movies m ON s.movie_id = m.movie_id AND m.active = 1
+            WHERE 1=1';
+
+        // Apply active/inactive filter
+        if ($filter === '1') {
+            $query .= ' AND b.active = 1';
+        } elseif ($filter === '0') {
+            $query .= ' AND b.active = 0';
+        }
+
+        // Apply status filter
+        if ($status_filter) {
+            $query .= ' AND LOWER(b.status) = LOWER(?)';
+        }
+
+        $query .= ' ORDER BY b.booking_id DESC';
+
+        // Execute query with or without status parameter
+        $bookings = $status_filter ? 
+            DB::select($query, [$status_filter]) : 
+            DB::select($query);
+
         return DataTables::of($bookings)->make(true);
     }
 
@@ -41,9 +61,9 @@ class BookingController extends Controller
             // Basic request validation
             $request->validate([
                 'customer_full_name' => 'required|string|max:255',
-                'cinema_name' => 'required|numeric',
-                'movie_title' => 'required|numeric',
-                'time' => 'required|date',
+                'cinema_select' => 'required|numeric',
+                'movie_select' => 'required|numeric',
+                'time' => 'required|numeric', // Changed to numeric as we're receiving screening_id
                 'seat_number' => 'required|string|max:10',
                 'status' => 'required|in:confirmed,pending,cancelled'
             ]);
@@ -75,24 +95,19 @@ class BookingController extends Controller
                 ], 404);
             }
 
-            // 2. Get screening ID using cinema_id and movie_id
+            // 2. Verify screening exists and is active
             $screening = DB::select("
                 SELECT screening_id 
                 FROM screenings 
-                WHERE cinema_id = ? 
-                AND movie_id = ? 
-                AND screening_time = ?", 
-                [
-                    $request->cinema_name,
-                    $request->movie_title,
-                    $request->time
-                ]
+                WHERE screening_id = ? 
+                AND active = 1", 
+                [$request->time] // time field now contains screening_id
             );
 
             if (empty($screening)) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'No screening found for the selected time.'
+                    'message' => 'Invalid or inactive screening selected.'
                 ], 404);
             }
 
@@ -116,21 +131,23 @@ class BookingController extends Controller
                 ], 400);
             }
 
-            // 4. Save booking with only IDs
+            // 4. Save booking
             DB::insert("
                 INSERT INTO booking (
                     customer_id, 
                     screening_id, 
                     set_number, 
                     status, 
+                    active,
                     created_at, 
                     updated_at
-                ) VALUES (?, ?, ?, ?, NOW(), NOW())", 
+                ) VALUES (?, ?, ?, ?, ?, NOW(), NOW())", 
                 [
                     $customer[0]->customer_id,
                     $screening[0]->screening_id,
                     $request->seat_number,
-                    $request->status
+                    $request->status,
+                    1
                 ]
             );
 
@@ -181,8 +198,8 @@ class BookingController extends Controller
             // Basic request validation
             $request->validate([
                 'customer_full_name' => 'required|string|max:255',
-                'cinema_name' => 'required|numeric',
-                'movie_title' => 'required|numeric',
+                'cinema_select' => 'required|numeric',
+                'movie_select' => 'required|numeric',
                 'time' => 'required|numeric', // This is now screening_id
                 'seat_number' => 'required|string|max:10',
                 'status' => 'required|in:confirmed,pending,cancelled'
@@ -190,11 +207,11 @@ class BookingController extends Controller
 
             return DB::transaction(function () use ($request, $id) {
                 // Check if booking exists
-                $booking = DB::select('SELECT * FROM booking WHERE booking_id = ? AND active = 1', [$id]);
+                $booking = DB::select('SELECT * FROM booking WHERE booking_id = ?', [$id]);
                 if (empty($booking)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Booking not found or is inactive'
+                        'message' => 'Booking not found'
                     ], 404);
                 }
 
@@ -234,15 +251,15 @@ class BookingController extends Controller
                     AND active = 1', 
                     [
                         $request->time, // This is screening_id
-                        $request->cinema_name, // This is cinema_id
-                        $request->movie_title  // This is movie_id
+                        $request->cinema_select, // This is cinema_id
+                        $request->movie_select  // This is movie_id
                     ]
                 );
 
                 if (empty($screening)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Invalid screening selection. Please check cinema, movie and time.'
+                        'message' => 'Invalid screening selection'
                     ], 404);
                 }
 
@@ -253,10 +270,9 @@ class BookingController extends Controller
                     WHERE screening_id = ? 
                     AND set_number = ? 
                     AND booking_id != ? 
-                    AND status != ? 
-                    AND active = 1', 
+                    AND status != ?', 
                     [
-                        $request->time,
+                        $screening[0]->screening_id,
                         $request->seat_number,
                         $id,
                         'cancelled'
@@ -266,22 +282,22 @@ class BookingController extends Controller
                 if (!empty($existingBooking)) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'This seat is already booked.'
-                    ], 409);
+                        'message' => 'This seat is already booked'
+                    ], 400);
                 }
 
                 // Update the booking
                 DB::update('
                     UPDATE booking 
-                    SET customer_id = ?,
-                        screening_id = ?,
-                        set_number = ?,
-                        status = ?,
-                        updated_at = NOW()
+                    SET customer_id = ?, 
+                        screening_id = ?, 
+                        set_number = ?, 
+                        status = ?, 
+                        updated_at = NOW() 
                     WHERE booking_id = ?',
                     [
                         $customer[0]->customer_id,
-                        $request->time, // screening_id
+                        $screening[0]->screening_id,
                         $request->seat_number,
                         $request->status,
                         $id
@@ -293,17 +309,39 @@ class BookingController extends Controller
                     'message' => 'Booking updated successfully'
                 ]);
             });
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to update booking: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function restore($id)
+    {
+        try {
+            // Check if booking exists
+            $booking = DB::select('SELECT * FROM booking WHERE booking_id = ?', [$id]);
+            
+            if (empty($booking)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Booking not found'
+                ], 404);
+            }
+
+            // Update the active status to 1
+            DB::update('UPDATE booking SET active = 1 WHERE booking_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Booking has been restored successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore booking: ' . $e->getMessage()
             ], 500);
         }
     }

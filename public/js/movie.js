@@ -1,118 +1,137 @@
 let movieTable;
+let currentFilter = "";
 
-function initializeMovieTable() {
+function initializeMovieTable(filter = "") {
+    console.log("Initializing movie table with filter:", filter);
+    currentFilter = filter;
+
     // Destroy existing DataTable if it exists
-    if ($.fn.DataTable.isDataTable('#movieTable')) {
-        $('#movieTable').DataTable().destroy();
+    if ($.fn.DataTable.isDataTable("#movieTable")) {
+        console.log("Destroying existing DataTable");
+        $("#movieTable").DataTable().destroy();
     }
 
-    movieTable = $('#movieTable').DataTable({
+    console.log("Creating new DataTable instance");
+    console.log("AJAX URL:", baseUrl() + "/MoviesManagement/DataTables");
+
+    movieTable = $("#movieTable").DataTable({
         ajax: {
-            url: baseUrl() + '/MoviesManagement/DataTables',
-            type: 'GET',
-            error: function(xhr, error, thrown) {
-                console.error('DataTables error:', error);
+            url: "/MoviesManagement/DataTables",
+            type: "GET",
+            data: function (d) {
+                d.filter = filter;
+                return d;
+            },
+            dataSrc: function (json) {
+                return json.data;
+            },
+            error: function (xhr, error, thrown) {
                 Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Failed to load movie data. Please try again.'
+                    icon: "error",
+                    title: "Error",
+                    text: "Failed to load movie data. Please try again.",
                 });
-            }
+            },
         },
         processing: true,
         serverSide: true,
         scrollX: true,
-        columns: [
-            { data: 'movie_id', name: 'movie_id', title: 'ID' },
-            { data: 'title', name: 'title', title: 'Title' },
-            { data: 'genre', name: 'genre', title: 'Genre' },
-            { data: 'duration', name: 'duration', title: 'Duration' },
-            { data: 'description', name: 'description', title: 'Description' },
-            { data: 'rating', name: 'rating', title: 'Rating' },
-            { 
-                data: null,
-                title: 'Actions',
-                orderable: false,
-                render: function(data, type, row) {
-                    return getActionButtons(row.movie_id, 'movie');
-                }
-            }
-        ],
-        columnDefs: [
-            {
-                targets: 0, // ID column
-                width: '50px',
-                className: 'text-center'
-            },
-            {
-                targets: 1, // Title column
-                width: '200px'
-            },
-            {
-                targets: 2, // Genre column
-                width: '120px'
-            },
-            {
-                targets: 3, // Duration column
-                width: '100px',
-                className: 'text-center'
-            },
-            {
-                targets: 4, // Description column
-                width: '300px',
-                render: function(data, type, row) {
-                    if (type === 'display' && data) {
-                        return '<div class="description-cell" title="' + data + '">' + 
-                               (data.length > 100 ? data.substr(0, 100) + '...' : data) + 
-                               '</div>';
-                    }
-                    return data;
-                }
-            },
-            {
-                targets: 5, // Rating column
-                width: '80px',
-                className: 'text-center'
-            },
-            {
-                targets: -1, // Actions column (last)
-                width: '150px',
-                className: 'text-center',
-                orderable: false,
-                searchable: false
-            }
-        ],
-        dom: '<"top"lf>rt<"bottom"ip><"clear">',
         autoWidth: false,
-        responsive: true,
-        pageLength: 10,
-        language: {
-            search: "Search:",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            paginate: {
-                first: "First",
-                last: "Last",
-                next: "Next",
-                previous: "Previous"
+        columns: [
+            {
+                data: "movie_id",
+                name: "movie_id",
+                title: "ID",
+                width: "50px",
+                searchable: true,
+                orderable: true
             },
-            processing: '<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>'
+            { data: "title", name: "title", title: "Title", width: "150px" },
+            { data: "genre", name: "genre", title: "Genre", width: "120px" },
+            {
+                data: "duration",
+                name: "duration",
+                title: "Duration",
+                width: "100px",
+            },
+            {
+                data: "description",
+                name: "description",
+                title: "Description",
+                width: "250px",
+            },
+            { data: "rating", name: "rating", title: "Rating", width: "80px" },
+            {
+                data: "active",
+                name: "active",
+                title: "Status",
+                width: "100px",
+                render: function (data) {
+                    return data == 1
+                        ? '<span class="px-2 py-1 bg-green-500 text-white rounded-full text-sm">Active</span>'
+                        : '<span class="px-2 py-1 bg-red-500 text-white rounded-full text-sm">Inactive</span>';
+                }
+            },
+            {
+                data: null,
+                name: "actions",
+                title: "Actions",
+                width: "200px",
+                orderable: false,
+                searchable: false,
+                render: function (data, type, row) {
+                    if (type === "display") {
+                        let buttons = "";
+
+                        // Edit button - show for both active and inactive
+                        buttons += `<button class="edit-movie bg-blue-500 text-white px-2 py-1 rounded mr-2" data-id="${row.movie_id}">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>`;
+
+                        // Show different buttons based on active status
+                        if (row.active == 1) {
+                            buttons += `<button class="delete-movie bg-red-500 text-white px-2 py-1 rounded" data-id="${row.movie_id}">
+                                <i class="fas fa-trash"></i> Deactivate
+                            </button>`;
+                        } else {
+                            buttons += `<button class="restore-movie bg-green-500 text-white px-2 py-1 rounded" data-id="${row.movie_id}">
+                                <i class="fas fa-undo"></i> Restore
+                            </button>`;
+                        }
+
+                        return buttons;
+                    }
+                    return "";
+                },
+            },
+        ],
+        // columnDefs: [
+        //     {
+        //         targets: '_all',
+        //         className: 'text-left'
+        //     },
+        //     {
+        //         targets: [6, 7], // Status and Actions columns
+        //         className: 'text-center'
+        //     }
+        // ],
+        dom: '<"top"lf>rt<"bottom"ip><"clear">',
+        language: {
+            processing:
+                '<div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div>',
         },
-        drawCallback: function() {
-            // Add tooltips to description cells
-            $('.description-cell').each(function() {
+        drawCallback: function () {
+            // Add tooltips to description cells if needed
+            $(".description-cell").each(function () {
                 if (this.scrollWidth > this.offsetWidth) {
-                    $(this).attr('title', $(this).text());
+                    $(this).attr("title", $(this).text());
                 }
             });
         },
-        initComplete: function() {
-            console.log('DataTable initialized successfully');
-        }
     });
 
     // Add custom styling
-    $('head').append(`
+    $("head").append(`
         <style>
             .dataTables_wrapper .dataTables_length {
                 margin-bottom: 15px;
@@ -123,10 +142,18 @@ function initializeMovieTable() {
             #movieTable {
                 width: 100% !important;
             }
-            #movieTable th, #movieTable td {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
+            #movieTable th {
+                background-color: #f9fafb;
+                color: #6b7280;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                padding: 12px 24px;
+                border-bottom: 1px solid #e5e7eb;
+            }
+            #movieTable td {
+                padding: 12px 24px;
+                border-bottom: 1px solid #e5e7eb;
             }
             .description-cell {
                 max-width: 300px;
@@ -141,35 +168,104 @@ function initializeMovieTable() {
             .dataTables_scrollBody {
                 min-height: 400px;
             }
-            .spinner-border {
-                display: inline-block;
-                width: 2rem;
-                height: 2rem;
-                vertical-align: text-bottom;
-                border: 0.25em solid currentColor;
-                border-right-color: transparent;
-                border-radius: 50%;
-                animation: spinner-border .75s linear infinite;
+            /* Custom header styling */
+            .dt-head-center {
+                text-align: center !important;
             }
-            @keyframes spinner-border {
-                to { transform: rotate(360deg); }
+            table.dataTable thead th {
+                position: relative;
+                text-align: left;
+                vertical-align: middle;
+                padding: 12px 24px;
+                border-bottom: 2px solid #e5e7eb;
+            }
+            table.dataTable thead th.sorting:after,
+            table.dataTable thead th.sorting_asc:after,
+            table.dataTable thead th.sorting_desc:after {
+                position: absolute;
+                right: 8px;
+                top: 50%;
+                transform: translateY(-50%);
+                opacity: 0.5;
             }
         </style>
     `);
 }
 
-// Handle delete movie
-$(document).on('click', '.delete-movie', function() {
-    const movieId = $(this).data('id');
-    
+// Handle filter change
+document.getElementById("filter").addEventListener("change", function () {
+    initializeMovieTable(this.value);
+});
+
+// Handle restore movie
+$(document).on("click", ".restore-movie", function () {
+    const movieId = $(this).data("id");
+
     Swal.fire({
-        title: 'Are you sure?',
-        text: "This movie will be deactivated!",
-        icon: 'warning',
+        title: "Restore Movie?",
+        text: "This will reactivate the movie!",
+        icon: "question",
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, deactivate it!'
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, restore it!",
+    }).then((result) => {
+        if (result.isConfirmed) {
+            restoreMovieStatus(movieId);
+        }
+    });
+});
+
+// Function to restore movie status
+async function restoreMovieStatus(movieId) {
+    try {
+        const response = await fetch(
+            `${baseUrl()}/MoviesManagement/restore/${movieId}`,
+            {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+            Swal.fire("Restored!", data.message, "success");
+            // Reload the DataTable to reflect the changes
+            if (movieTable) {
+                movieTable.ajax.reload(null, false);
+            }
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        Swal.fire(
+            "Error!",
+            error.message || "Failed to restore movie",
+            "error"
+        );
+    }
+}
+
+// Handle delete movie
+$(document).on("click", ".delete-movie", function () {
+    const movieId = $(this).data("id");
+
+    Swal.fire({
+        title: "Are you sure?",
+        text: "This movie will be deactivated!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, deactivate it!",
     }).then((result) => {
         if (result.isConfirmed) {
             updateMovieStatus(movieId);
@@ -180,23 +276,24 @@ $(document).on('click', '.delete-movie', function() {
 // Function to update movie status
 async function updateMovieStatus(movieId) {
     try {
-        const response = await fetch(`${baseUrl()}/MoviesManagement/updateStatus/${movieId}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+        const response = await fetch(
+            `${baseUrl()}/MoviesManagement/updateStatus/${movieId}`,
+            {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
             }
-        });
+        );
 
         const data = await response.json();
 
         if (data.success) {
-            Swal.fire(
-                'Deactivated!',
-                data.message,
-                'success'
-            );
+            Swal.fire("Deactivated!", data.message, "success");
             // Reload the DataTable to reflect the changes
             if (movieTable) {
                 movieTable.ajax.reload(null, false);
@@ -205,11 +302,11 @@ async function updateMovieStatus(movieId) {
             throw new Error(data.message);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
         Swal.fire(
-            'Error!',
-            error.message || 'Failed to update movie status',
-            'error'
+            "Error!",
+            error.message || "Failed to update movie status",
+            "error"
         );
     }
 }
@@ -228,56 +325,62 @@ function closeModal() {
 }
 
 // Initialize form submission
-document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById("addMovieForm")?.addEventListener("submit", async function (e) {
-        e.preventDefault();
+document.addEventListener("DOMContentLoaded", function () {
+    document
+        .getElementById("addMovieForm")
+        ?.addEventListener("submit", async function (e) {
+            e.preventDefault();
 
-        const formData = new FormData(this);
+            const formData = new FormData(this);
 
-        try {
-            const response = await fetch(baseUrl() + "/MoviesManagement/create", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                    Accept: "application/json",
-                },
-                body: formData,
-            });
+            try {
+                const response = await fetch(
+                    baseUrl() + "/MoviesManagement/create",
+                    {
+                        method: "POST",
+                        headers: {
+                            "X-CSRF-TOKEN": document.querySelector(
+                                'meta[name="csrf-token"]'
+                            ).content,
+                            Accept: "application/json",
+                        },
+                        body: formData,
+                    }
+                );
 
-            const data = await response.json();
+                const data = await response.json();
 
-            if (response.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: data.message || 'Movie added successfully.'
-                });
+                if (response.ok) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Success",
+                        text: data.message || "Movie added successfully.",
+                    });
 
-                this.reset();
-                closeModal();
-                
-                // Refresh the table after adding a movie
-                if (movieTable) {
-                    movieTable.ajax.reload(null, false);
+                    this.reset();
+                    closeModal();
+
+                    // Refresh the table after adding a movie
+                    if (movieTable) {
+                        movieTable.ajax.reload(null, false);
+                    }
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Oops...",
+                        text: data.message || "Failed to add Movie.",
+                    });
                 }
-            } else {
+            } catch (error) {
+                console.error("Fetch Error:", error);
                 Swal.fire({
                     icon: "error",
-                    title: "Oops...",
-                    text: data.message || "Failed to add Movie.",
+                    title: "Unexpected Error",
+                    text: "Something went wrong. Please try again.",
                 });
             }
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Unexpected Error",
-                text: "Something went wrong. Please try again.",
-            });
-        }
-    });
+        });
 });
-
 
 //kuhaon ang value sa modal
 function openEditModal() {
@@ -292,66 +395,84 @@ function closeEditModal() {
     modal.classList.remove("flex");
 }
 
-$(document).on('click', '.edit-movie', function() {
-    const movieId = $(this).data('id');
-    const row = movieTable.row($(this).closest('tr')).data();
-    
-    // Populate the edit form
-    document.getElementById('edit_movie_id').value = movieId;
-    document.getElementById('edit_title').value = row.title;
-    document.getElementById('edit_genre').value = row.genre;
-    document.getElementById('edit_duration').value = row.duration;
-    document.getElementById('edit_description').value = row.description;
-    document.getElementById('edit_rating').value = row.rating;
-    
-    // Open the edit modal
-    openEditModal();
+// Edit Movie Form
+document.addEventListener("DOMContentLoaded", function () {
+    document
+        .getElementById("editMovieForm")
+        ?.addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const formData = new FormData(this);
+            const movieId = formData.get("movie_id");
+
+            try {
+                const response = await fetch(
+                    `${baseUrl()}/MoviesManagement/update/${movieId}`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "X-CSRF-TOKEN": document.querySelector(
+                                'meta[name="csrf-token"]'
+                            ).content,
+                            Accept: "application/json",
+                        },
+                        body: formData,
+                    }
+                );
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Success",
+                        text: data.message || "Movie updated successfully.",
+                    });
+
+                    closeEditModal();
+
+                    if (movieTable) {
+                        movieTable.ajax.reload(null, false);
+                    }
+                } else {
+                    let errorMessage = data.message || "Failed to update Movie.";
+                    if (data.errors) {
+                        errorMessage = Object.values(data.errors)
+                            .flat()
+                            .join("\n");
+                    }
+                    Swal.fire({
+                        icon: "error",
+                        title: "Error",
+                        text: errorMessage,
+                    });
+                }
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                Swal.fire({
+                    icon: "error",
+                    title: "Unexpected Error",
+                    text: "Network error or server is not responding. Please try again.",
+                });
+            }
+        });
 });
 
-// Edit Movie Form
-document.getElementById("editMovieForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
+// Handle edit button click
+$(document).on("click", ".edit-movie", function () {
+    const movieId = $(this).data("id");
+    const row = movieTable.row($(this).closest("tr")).data();
+    console.log("Edit movie clicked. Movie ID:", movieId);
+    console.log("Row data:", row);
 
-    const formData = new FormData(this);
-    const movieId = formData.get('movie_id');
+    // Populate the edit form
+    document.getElementById("edit_movie_id").value = movieId;
+    document.getElementById("edit_title").value = row.title;
+    document.getElementById("edit_genre").value = row.genre;
+    document.getElementById("edit_duration").value = row.duration;
+    document.getElementById("edit_description").value = row.description;
+    document.getElementById("edit_rating").value = row.rating;
 
-    try {
-        const response = await fetch(`${baseUrl()}/MoviesManagement/update/${movieId}`, {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                "Accept": "application/json"
-            },
-            body: formData,
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: data.message || 'Movie updated successfully.'
-            });
-
-            closeEditModal();
-            
-            if (movieTable) {
-                movieTable.ajax.reload(null, false);
-            }
-        } else {
-            Swal.fire({
-                icon: "error",
-                title: "Error",
-                text: data.message || "Failed to update Movie.",
-            });
-        }
-    } catch (error) {
-        console.error("Fetch Error:", error);
-        Swal.fire({
-            icon: "error",
-            title: "Unexpected Error",
-            text: "Something went wrong. Please try again.",
-        });
-    }
+    // Open the edit modal
+    openEditModal();
 });

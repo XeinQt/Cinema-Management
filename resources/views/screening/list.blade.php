@@ -38,7 +38,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300 mb-2">Cinema</label>
                     <select 
-                        name="cinemaName" 
+                        name="cinema_select" 
                         id="cinema_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -50,7 +50,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Movie</label>
                     <select 
-                        name="movieName" 
+                        name="movie_select" 
                         id="movie_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -60,10 +60,10 @@
                 </div>
 
                 <div class="mb-4">
-                    <label for="created_at" class="block text-gray-700 dark:text-gray-300 mb-2">Date & Time</label>
+                    <label for="screening_time" class="block text-gray-700 dark:text-gray-300 mb-2">Date & Time</label>
                     <input 
                         type="datetime-local" 
-                        id="created_at" 
+                        id="screening_time" 
                         name="time" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -89,7 +89,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300 mb-2">Cinema</label>
                     <select 
-                        name="cinemaName" 
+                        name="cinema_select" 
                         id="edit_cinema_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required
@@ -101,7 +101,7 @@
                 <div class="mb-4">
                     <label class="block text-gray-700 dark:text-gray-300">Movie</label>
                     <select 
-                        name="movieName" 
+                        name="movie_select" 
                         id="edit_movie_select" 
                         class="w-full px-3 py-2 border rounded" 
                         required

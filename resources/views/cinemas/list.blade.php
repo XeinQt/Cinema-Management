@@ -132,7 +132,7 @@
 
                 <div class="flex justify-end">
                     <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-500 text-white rounded mr-2">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">Update</button>
+                    <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded">Update</button>
                 </div>
             </form>
         </div>

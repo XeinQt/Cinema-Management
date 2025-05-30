@@ -13,18 +13,28 @@ class CinemasController extends Controller
         return view('cinemas.list');
     }
 
-    public function dataTables()
+    public function dataTables(Request $request)
     {
-        $cinemas = DB::select('
+        $filter = $request->input('filter', '');
+        
+        $query = '
             SELECT 
                 c.*,
                 m.name as mall_name,
-                CONCAT(mg.first_name, " ", mg.last_name) as manager_full_name
+                CONCAT(mg.first_name, " ", mg.last_name) as manager_name
             FROM cinemas c
             JOIN malls m ON c.mall_id = m.mall_id
             JOIN managers mg ON c.manager_id = mg.manager_id
-            WHERE c.active = 1
-        ');
+        ';
+
+        // Apply filter
+        if ($filter === 'active') {
+            $query .= ' WHERE c.active = 1';
+        } elseif ($filter === 'inactive') {
+            $query .= ' WHERE c.active = 0';
+        }
+
+        $cinemas = DB::select($query);
         return DataTables::of($cinemas)->make(true);
     }
 
@@ -140,6 +150,53 @@ class CinemasController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to deactivate cinema: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function restore($id)
+    {
+        try {
+            // Check if cinema exists
+            $cinema = DB::select('SELECT * FROM cinemas WHERE cinema_id = ?', [$id]);
+            
+            if (empty($cinema)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cinema not found'
+                ], 404);
+            }
+
+            // Check if mall is active
+            $mall = DB::select('SELECT active FROM malls WHERE mall_id = ?', [$cinema[0]->mall_id]);
+            if (empty($mall) || $mall[0]->active == 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot restore cinema: Associated mall is inactive'
+                ], 422);
+            }
+
+            // Check if manager is active
+            $manager = DB::select('SELECT active FROM managers WHERE manager_id = ?', [$cinema[0]->manager_id]);
+            if (empty($manager) || $manager[0]->active == 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Cannot restore cinema: Associated manager is inactive'
+                ], 422);
+            }
+
+            // Update the active status to 1
+            DB::update('UPDATE cinemas SET active = 1 WHERE cinema_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Cinema has been restored successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore cinema: ' . $e->getMessage()
             ], 500);
         }
     }

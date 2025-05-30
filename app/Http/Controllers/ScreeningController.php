@@ -12,55 +12,65 @@ class ScreeningController extends Controller
         return view ('screening.list');
     }
 
-    public function dataTables()
+    public function dataTables(Request $request)
     {
-        $screenings = DB::select('
-            SELECT 
-                s.*,
-                c.name as cinema_name,
-                m.title as movie_title
-            FROM screenings s
-            JOIN cinemas c ON s.cinema_id = c.cinema_id
-            JOIN movies m ON s.movie_id = m.movie_id
-            WHERE s.active = 1
-        ');
-        return DataTables::of($screenings)->make(true);
+        $filter = $request->input('filter', '');
+        
+        $query = DB::table('screenings as s')
+            ->join('cinemas as c', 's.cinema_id', '=', 'c.cinema_id')
+            ->join('movies as m', 's.movie_id', '=', 'm.movie_id')
+            ->select([
+                's.screening_id',
+                's.screening_time',
+                's.active',
+                's.cinema_id',
+                's.movie_id',
+                'c.name as cinema_name',
+                'm.title as movie_title'
+            ]);
+
+        // Apply filter
+        if ($filter === 'active') {
+            $query->where('s.active', 1);
+        } elseif ($filter === 'inactive') {
+            $query->where('s.active', 0);
+        }
+
+        return DataTables::of($query)->make(true);
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'cinemaName' => 'required|string|max:255',
-            'movieName' => 'required|string|max:255',
-            'time' => 'required|date', // better validation for datetime
+            'cinema_select' => 'required|numeric',
+            'movie_select' => 'required|numeric',
+            'time' => 'required|date',
         ]);
 
-        $cinema = DB::select('SELECT cinema_id FROM cinemas WHERE name = ? LIMIT 1', [$request->cinemaName]);
-
+        // Check if cinema exists and is active
+        $cinema = DB::select('SELECT cinema_id FROM cinemas WHERE cinema_id = ? AND active = 1 LIMIT 1', [$request->cinema_select]);
         if (empty($cinema)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Cinema not found',
+                'message' => 'Cinema not found or is inactive',
             ], 404);
         }
-        $cinemaId = $cinema[0]->cinema_id;
 
-        $movie = DB::select('SELECT movie_id FROM movies WHERE title = ? LIMIT 1', [$request->movieName]);
-
+        // Check if movie exists and is active
+        $movie = DB::select('SELECT movie_id FROM movies WHERE movie_id = ? AND active = 1 LIMIT 1', [$request->movie_select]);
         if (empty($movie)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Movie not found',
+                'message' => 'Movie not found or is inactive',
             ], 404);
         }
-        $movieId = $movie[0]->movie_id;
 
         $time = \Carbon\Carbon::parse($request->time)->format('Y-m-d H:i:s');
 
         $existingScreening = DB::select('
             SELECT * FROM screenings 
-            WHERE cinema_id = ? AND movie_id = ? AND screening_time = ?', 
-            [$cinemaId, $movieId, $time]
+            WHERE cinema_id = ? AND movie_id = ? AND screening_time = ? AND active = 1', 
+            [$request->cinema_select, $request->movie_select, $time]
         );
 
         if (!empty($existingScreening)) {
@@ -71,10 +81,10 @@ class ScreeningController extends Controller
         }
 
         DB::insert('INSERT INTO screenings (cinema_id, movie_id, screening_time, active, created_at, updated_at) VALUES (?, ?, ?, ?, NOW(), NOW())', [
-            $cinemaId,
-            $movieId,
-            $request->time,
-            1,  // <-- comma here is required in SQL string before NOW()
+            $request->cinema_select,
+            $request->movie_select,
+            $time,
+            1,
         ]);
 
         return response()->json([
@@ -125,8 +135,8 @@ class ScreeningController extends Controller
     {
         try {
             $request->validate([
-                'cinemaName' => 'required|string|max:255',
-                'movieName' => 'required|string|max:255',
+                'cinema_select' => 'required|numeric',
+                'movie_select' => 'required|numeric',
                 'time' => 'required|date',
             ]);
 
@@ -140,25 +150,23 @@ class ScreeningController extends Controller
                     ], 404);
                 }
 
-                // Get cinema ID
-                $cinema = DB::select('SELECT cinema_id FROM cinemas WHERE name = ? AND active = 1 LIMIT 1', [$request->cinemaName]);
+                // Check if cinema exists and is active
+                $cinema = DB::select('SELECT cinema_id FROM cinemas WHERE cinema_id = ? AND active = 1 LIMIT 1', [$request->cinema_select]);
                 if (empty($cinema)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Cinema not found or is inactive',
                     ], 404);
                 }
-                $cinemaId = $cinema[0]->cinema_id;
 
-                // Get movie ID
-                $movie = DB::select('SELECT movie_id FROM movies WHERE title = ? AND active = 1 LIMIT 1', [$request->movieName]);
+                // Check if movie exists and is active
+                $movie = DB::select('SELECT movie_id FROM movies WHERE movie_id = ? AND active = 1 LIMIT 1', [$request->movie_select]);
                 if (empty($movie)) {
                     return response()->json([
                         'success' => false,
                         'message' => 'Movie not found or is inactive',
                     ], 404);
                 }
-                $movieId = $movie[0]->movie_id;
 
                 // Format time
                 $time = \Carbon\Carbon::parse($request->time)->format('Y-m-d H:i:s');
@@ -167,7 +175,7 @@ class ScreeningController extends Controller
                 $existingScreening = DB::select('
                     SELECT * FROM screenings 
                     WHERE cinema_id = ? AND movie_id = ? AND screening_time = ? AND screening_id != ? AND active = 1', 
-                    [$cinemaId, $movieId, $time, $id]
+                    [$request->cinema_select, $request->movie_select, $time, $id]
                 );
 
                 if (!empty($existingScreening)) {
@@ -183,8 +191,8 @@ class ScreeningController extends Controller
                     SET cinema_id = ?, movie_id = ?, screening_time = ?, updated_at = NOW() 
                     WHERE screening_id = ?',
                     [
-                        $cinemaId,
-                        $movieId,
+                        $request->cinema_select,
+                        $request->movie_select,
                         $time,
                         $id
                     ]
@@ -209,4 +217,32 @@ class ScreeningController extends Controller
         }
     }
 
+    public function restore($id)
+    {
+        try {
+            // Check if screening exists
+            $screening = DB::select('SELECT * FROM screenings WHERE screening_id = ?', [$id]);
+            
+            if (empty($screening)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Screening not found'
+                ], 404);
+            }
+
+            // Update the active status to 1
+            DB::update('UPDATE screenings SET active = 1 WHERE screening_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Screening has been restored successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore screening: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

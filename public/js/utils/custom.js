@@ -19,7 +19,3 @@ function getActionButtons(id, type) {
             </button>
         </div>`;
 }
-
-
-
-

@@ -12,27 +12,37 @@ class MovieController extends Controller
         return view ('movies.list');
     }
 
-    public function dataTables()
+    public function dataTables(Request $request)
     {
-        $query = DB::table('movies')
-            ->where('active', 1)
-            ->select([
-                'movie_id',
-                'title',
-                'genre',
-                'duration',
-                'description',
-                'rating',
-                'created_at',
-                'updated_at'
-            ]);
+        $filter = $request->input('filter', '');
+        
+        $query = DB::table('movies');
+
+        // Apply filter
+        if ($filter === 'active') {
+            $query->where('active', 1);
+        } elseif ($filter === 'inactive') {
+            $query->where('active', 0);
+        }
+
+        $query->select([
+            'movie_id',
+            'title',
+            'genre',
+            'duration',
+            'description',
+            'rating',
+            'active',
+            'created_at',
+            'updated_at'
+        ]);
 
         return DataTables::of($query)
             ->addIndexColumn()
             ->make(true);
     }
 
-     public function store(Request $request)
+    public function store(Request $request)
     {
         $request->validate([
             'title' => 'required|string|max:255',
@@ -43,18 +53,18 @@ class MovieController extends Controller
         ]);
         $existingMovie = DB::select('
             SELECT * FROM movies 
-            WHERE LOWER(title) = ? AND LOWER(genre) = ? AND LOWER(duration) = ? AND LOWER(description) = ? AND LOWER(rating) = ?', 
+            WHERE LOWER(title) = ? AND LOWER(genre) = ? AND LOWER(duration) = ? AND LOWER(description) = ? AND LOWER(rating) = ? AND active = 1', 
             [strtolower($request->title), strtolower($request->genre), strtolower($request->duration), strtolower($request->description) , strtolower($request->rating)]
         );
 
         if (!empty($existingMovie)) {
             return response()->json([
-                'message' => 'A Movues with the same title, genre, duration, description and rating already exists.'
+                'message' => 'A Movie with the same title, genre, duration, description and rating already exists.'
             ], 422);
         }
 
-        // Insert new mall
-        DB::insert('INSERT INTO movies (title, genre, duration, description , rating,  created_at, updated_at) VALUES (?, ?, ?, ?, ?, NOW(), NOW())', [
+        // Insert new movie
+        DB::insert('INSERT INTO movies (title, genre, duration, description, rating, active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, 1, NOW(), NOW())', [
             $request->title,
             $request->genre,
             $request->duration,
@@ -62,13 +72,13 @@ class MovieController extends Controller
             $request->rating,
         ]);
 
-        return response()->json(['message' => 'Movies added successfully']);
+        return response()->json(['message' => 'Movie added successfully']);
     }
 
     public function updateStatus($id)
     {
         try {
-            // Check if manager exists
+            // Check if movie exists
             $movie = DB::select('SELECT * FROM movies WHERE movie_id = ?', [$id]);
             
             if (empty($movie)) {
@@ -78,12 +88,12 @@ class MovieController extends Controller
                 ], 404);
             }
 
-            // Check if manager is assigned to any active cinemas
+            // Check if movie has any active screenings
             $activeScreenings = DB::select('SELECT * FROM screenings WHERE movie_id = ? AND active = 1', [$id]);
             if (!empty($activeScreenings)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Cannot deactivate movie: They are still assigned to active screenings'
+                    'message' => 'Cannot deactivate movie: It has active screenings scheduled'
                 ], 422);
             }
 
@@ -102,6 +112,35 @@ class MovieController extends Controller
             ], 500);
         }
     }
+
+    public function restore($id)
+    {
+        try {
+            // Check if movie exists
+            $movie = DB::select('SELECT * FROM movies WHERE movie_id = ?', [$id]);
+            
+            if (empty($movie)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Movie not found'
+                ], 404);
+            }
+
+            // Update the active status to 1
+            DB::update('UPDATE movies SET active = 1 WHERE movie_id = ?', [$id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Movie has been restored successfully'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to restore movie: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     
     public function update($id, Request $request)
     {
@@ -114,7 +153,7 @@ class MovieController extends Controller
                 'rating' => 'required',
             ]);
 
-            // Check if manager exists
+            // Check if movie exists
             $movie = DB::select('SELECT * FROM movies WHERE movie_id = ?', [$id]);
             if (empty($movie)) {
                 return response()->json([
@@ -123,10 +162,10 @@ class MovieController extends Controller
                 ], 404);
             }
             
-            // Check if another mall has the same details (excluding current mall)
+            // Check if another movie has the same details (excluding current movie)
             $existingMovie = DB::select('
                 SELECT * FROM movies 
-                WHERE LOWER(title) = ? AND LOWER(genre) = ? AND LOWER(duration) = ? AND LOWER(description) = ? AND LOWER(rating) = ? AND movie_id != ?',
+                WHERE LOWER(title) = ? AND LOWER(genre) = ? AND LOWER(duration) = ? AND LOWER(description) = ? AND LOWER(rating) = ? AND movie_id != ? AND active = 1',
                 [
                     strtolower($request->title), 
                     strtolower($request->genre), 
@@ -143,10 +182,10 @@ class MovieController extends Controller
                 ], 422);
             }
 
-             // Check if another manager has the same email (excluding current manager)
-             $existingMovieTitle = DB::select('
+            // Check if another movie has the same title (excluding current movie)
+            $existingMovieTitle = DB::select('
                 SELECT * FROM movies 
-                WHERE LOWER(title) = ? AND movie_id != ?',
+                WHERE LOWER(title) = ? AND movie_id != ? AND active = 1',
                 [
                     strtolower($request->title), 
                     $id
@@ -186,6 +225,4 @@ class MovieController extends Controller
             ], 500);
         }
     }
-
-
 }

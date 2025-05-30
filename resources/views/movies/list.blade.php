@@ -43,6 +43,7 @@
                                 <th>Duration</th>
                                 <th>Description</th>
                                 <th>Rating</th>
+                                <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
