@@ -12,19 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('booking', function (Blueprint $table) {
-          
-           // Primary key
             $table->bigIncrements('booking_id');
-
-            // Foreign key for mall_id, referring to the 'mall_id' column in the malls table
             $table->unsignedBigInteger('customer_id')->constrained('customer')->onDelete('cascade');
-
-            // Foreign key for manager_id, referring to the 'manager_id' column in the managers table
             $table->unsignedBigInteger('screening_id')->constrained('screening')->onDelete('cascade');
-
             $table->string('set_number');
             $table->string('status');
-              $table->boolean('active')->default(1); // or default(0) if you prefer
+            $table->boolean('active')->default(1); 
             $table->timestamps();
 
             // Ensure using InnoDB for foreign key constraints

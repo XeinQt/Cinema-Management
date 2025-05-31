@@ -55,9 +55,9 @@ function initializeBookingTable(activeFilter = "", statusFilter = "") {
                 width: "10px",
             },
             {
-                data: "customer_name",
-                name: "customer_name",
-                title: "Customer",
+                data: "customer_id",
+                name: "customer_id",
+                title: "Customer ID",
                 width: "30px",
             },
             {

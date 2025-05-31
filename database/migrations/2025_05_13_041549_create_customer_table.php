@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('email')->unique();
             $table->string('phonenumber')->nullable();
-               $table->boolean('active')->default(1); // or default(0) if you prefer
+               $table->boolean('active')->default(1); 
             $table->timestamps();
 
             // Ensure using InnoDB for foreign key constraints

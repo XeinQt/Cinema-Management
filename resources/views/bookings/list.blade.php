@@ -89,7 +89,7 @@
                     <label class="block text-gray-700 dark:text-gray-300">Number of Seats</label>
                     <input 
                         type="text" 
-                        name="seats" 
+                        name="set_number" 
                         id="seats" 
                         class="w-full px-3 py-2 border rounded" 
                         placeholder="Enter number of seats"
@@ -143,7 +143,7 @@
                     <label class="block text-gray-700 dark:text-gray-300">Number of Seats</label>
                     <input 
                         type="text" 
-                        name="seats" 
+                        name="set_number" 
                         id="edit_seats" 
                         class="w-full px-3 py-2 border rounded" 
                         placeholder="Enter number of seats"

@@ -432,7 +432,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             try {
                 const response = await fetch(
-                    baseUrl() + "/CinemasManagement/store",
+                    baseUrl() + "/CinemasManagement/create",
                     {
                         method: "POST",
                         headers: {

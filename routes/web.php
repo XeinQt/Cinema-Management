@@ -47,7 +47,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/MoviesManagement', [MovieController::class, 'list'])->name('movies');
     Route::get('/MoviesManagement/DataTables', [MovieController::class, 'dataTables'])->name('movies.datatables');
-    Route::post('/MoviesManagement/store', [MovieController::class, 'store'])->name('movies.store');
+    Route::post('/MoviesManagement/create', [MovieController::class, 'store'])->name('movies.store');
     Route::post('/MoviesManagement/update/{id}', [MovieController::class, 'update'])->name('movies.update');
     Route::post('/MoviesManagement/updateStatus/{id}', [MovieController::class, 'updateStatus'])->name('movies.updateStatus');
     Route::post('/MoviesManagement/restore/{id}', [MovieController::class, 'restore'])->name('movies.restore');
