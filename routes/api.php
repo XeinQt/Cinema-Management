@@ -8,28 +8,41 @@ use App\Http\Controllers\Api\ManagerController;
 use App\Http\Controllers\Api\ScreeningController;
 use App\Http\Controllers\Api\MovieController;
 use App\Http\Controllers\Api\BookingController;
-use App\Http\Controllers\Api\CustomerController;
+use App\Http\Controllers\api\CustomerController;
+use App\Http\Controllers\Api\AuthController;
 
-// API Routes with prefix 'api/'
-Route::prefix('v1')->group(function () {
-    // Malls API Endpoints
-    Route::apiResource('malls', MallController::class);
+// Public routes
+Route::post('/login', [AuthController::class, 'login']);
 
-    // Cinemas API Endpoints
-    Route::apiResource('cinemas', CinemaController::class);
+// Protected routes
+Route::middleware('auth:sanctum')->group(function() {
+    Route::prefix('v1')->group(function () {
+        // Customer Routes
+        Route::get('/customers', [CustomerController::class, 'list']);
+        Route::get('/customers/{id}', [CustomerController::class, 'customerById']);
+        Route::post('/customers/create', [CustomerController::class, 'create']);
+        
+        // Other resource routes
+        Route::apiResource('malls', MallController::class);
+        Route::apiResource('cinemas', CinemaController::class);
+        Route::apiResource('managers', ManagerController::class);
+        Route::apiResource('screenings', ScreeningController::class);
+        Route::apiResource('movies', MovieController::class);
+        Route::apiResource('bookings', BookingController::class);
+    });
+});
 
-    // Managers API Endpoints
-    Route::apiResource('managers', ManagerController::class);
+// Public routes
+Route::post('/login', [AuthController::class, 'login']);
 
-    // Screenings API Endpoints
-    Route::apiResource('screenings', ScreeningController::class);
+// Protected routes
+Route::middleware('auth:sanctum')->group(function() {
+    Route::get('/customers', [CustomerController::class, 'list']);
+    Route::get('/customers/{id}', [CustomerController::class, 'customerById']);
+    Route::post('/customers/create', [CustomerController::class, 'create']);
+    Route::post('/customers/update/{id}', [CustomerController::class, 'update']);
+    Route::delete('/customers/delete/{id}', [CustomerController::class, 'delete']);
+});
 
-    // Movies API Endpoints
-    Route::apiResource('movies', MovieController::class);
 
-    // Bookings API Endpoints
-    Route::apiResource('bookings', BookingController::class);
 
-    // Customers API Endpoints
-    Route::apiResource('customers', CustomerController::class);
-}); 

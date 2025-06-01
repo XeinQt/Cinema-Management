@@ -228,5 +228,10 @@ class MallsController extends Controller
             ], 500);
         }
     }
+
+    public function index(Request $request){
+
+        
+    }
 }
 

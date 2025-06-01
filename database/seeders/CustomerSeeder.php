@@ -25,7 +25,7 @@ class CustomerSeeder extends Seeder
                 'first_name' => $faker->firstName,
                 'last_name' => $faker->lastName,
                 'email' => $faker->safeEmail,
-                'phonenumber' => $faker->phoneNumber,
+                'phone' => $faker->phoneNumber,
                 'active' => $faker->numberBetween(0, 1), // no unique here
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -33,7 +33,26 @@ class CustomerSeeder extends Seeder
         }
 
         foreach (array_chunk($data, 200) as $chunk) {
-            DB::table('customer')->insert($chunk);
+            DB::table('customers')->insert($chunk);
         }
+
+        DB::table('customers')->insert([
+            [
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'email' => 'john@example.com',
+                'phone' => '1234567890',
+                'created_at' => now(),
+                'updated_at' => now()
+            ],
+            [
+                'first_name' => 'Jane',
+                'last_name' => 'Smith',
+                'email' => 'jane@example.com',
+                'phone' => '0987654321',
+                'created_at' => now(),
+                'updated_at' => now()
+            ]
+        ]);
     }
 }
