@@ -10,7 +10,7 @@ class CustomerController extends Controller
 {
     public function list()
     {
-        $customers = DB::select('SELECT * FROM customer where active = 1');
+        $customers = DB::select('SELECT * FROM customer');
         return response()->json([
             'status' => 'success',
             'rows' => count($customers),
@@ -18,7 +18,7 @@ class CustomerController extends Controller
         ], 200);
     }
 
-    public function customerById($id)
+    public function seacrhById($id)
     {
         $customer = DB::select('SELECT * FROM customer WHERE customer_id = ?', [$id]);
         return response()->json([
@@ -60,6 +60,44 @@ class CustomerController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Customer deleted successfully'
+        ], 200);
+    }
+
+    public function updateActive($id)
+    {
+        $customer = DB::update('UPDATE customer SET active = 0 WHERE customer_id = ?', [$id]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Customer updated successfully'
+        ], 200);
+    }
+
+    public function updateInActive($id)
+    {
+        $customer = DB::update('UPDATE customer SET active = 1 WHERE customer_id = ?', [$id]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Customer updated successfully'
+        ], 200);
+    }
+
+    public function active()
+    {
+        $customers = DB::select('SELECT * FROM customer where active = 1');
+        return response()->json([
+            'status' => 'success',
+            'rows' => count($customers),
+            'data' => $customers
+        ], 200);
+    }
+
+    public function inActive()
+    {
+        $customers = DB::select('SELECT * FROM customer where active = 0');
+        return response()->json([
+            'status' => 'success',
+            'rows' => count($customers),
+            'data' => $customers
         ], 200);
     }
 }

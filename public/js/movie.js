@@ -32,6 +32,7 @@ function initializeMovieTable(filter = "") {
                 });
             },
         },
+        scrollX: true,
         processing: true,
         serverSide: true,
         autoWidth: false,
@@ -70,7 +71,7 @@ function initializeMovieTable(filter = "") {
                 data: "description",
                 name: "description",
                 title: "Description",
-                width: "150px",
+                width: "100px",
                 render: function (data) {
                     return `<div class="max-w-[200px] overflow-hidden whitespace-nowrap text-ellipsis" title="${data}">${data}</div>`;
                 },
@@ -140,7 +141,9 @@ async function updateMovieStatus(movieId) {
         const response = await fetch(url, {
             method: "POST",
             headers: {
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
+                "X-CSRF-TOKEN": document.querySelector(
+                    'meta[name="csrf-token"]'
+                ).content,
                 Accept: "application/json",
                 "Content-Type": "application/json",
             },
@@ -252,6 +255,18 @@ $(document).on("click", ".edit-movie", function () {
     openEditModal();
 });
 
+function openEditModal() {
+    const modal = document.getElementById("editMovieModal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+function closeEditModal() {
+    const modal = document.getElementById("editMovieModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
+
 // Modal Functions
 function openModal() {
     const modal = document.getElementById("addMovieModal");
@@ -261,18 +276,6 @@ function openModal() {
 
 function closeModal() {
     const modal = document.getElementById("addMovieModal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-}
-
-function openEditModal() {
-    const modal = document.getElementById("editMovieModal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-}
-
-function closeEditModal() {
-    const modal = document.getElementById("editMovieModal");
     modal.classList.add("hidden");
     modal.classList.remove("flex");
 }

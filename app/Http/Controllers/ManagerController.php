@@ -24,7 +24,7 @@ class ManagerController extends Controller
             $query .= ' WHERE active = 0';
         }
         
-        $query .= ' ORDER BY manager_id DESC';
+        $query .= ' ORDER BY manager_id ASC';
         
         $managers = DB::select($query);
         return DataTables::of($managers)

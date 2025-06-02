@@ -86,13 +86,13 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Number of Seats</label>
+                    <label class="block text-gray-700 dark:text-gray-300">Seat Number</label>
                     <input 
                         type="text" 
                         name="set_number" 
                         id="seats" 
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter number of seats"
+                        placeholder="Enter seat number"
                         min="1"
                         required
                     >
@@ -140,13 +140,13 @@
                 </div>
 
                 <div class="mb-4">
-                    <label class="block text-gray-700 dark:text-gray-300">Number of Seats</label>
+                    <label class="block text-gray-700 dark:text-gray-300">Seat Number</label>
                     <input 
                         type="text" 
                         name="set_number" 
                         id="edit_seats" 
                         class="w-full px-3 py-2 border rounded" 
-                        placeholder="Enter number of seats"
+                        placeholder="Enter seat number"
                         min="1"
                         required
                     >

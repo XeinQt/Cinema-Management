@@ -19,7 +19,6 @@
                     </div>
 
                     <table class="w-full bg-white shadow-md rounded-lg overflow-hidden mt-4" id="mallsDatatables"></table>
-
                 </div>
             </div>
         </div>

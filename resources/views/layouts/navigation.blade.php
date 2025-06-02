@@ -4,8 +4,8 @@
         <!-- Logo Section -->
         <div class="flex items-center p-4">
             <a href="{{ route('dashboard') }}" class="flex items-center">
-                <x-application-logo class="block h-8 w-auto fill-current text-white" />
-                <span class="ml-3 text-lg font-medium text-white">Cinema</span>
+                {{-- <x-application-logo class="block h-8 w-auto fill-current text-white" /> --}}
+                <span class="ml-3 text-lg font-medium text-white">Cinema Management</span>
             </a>
         </div>
 

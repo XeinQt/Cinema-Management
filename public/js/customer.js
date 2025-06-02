@@ -16,71 +16,77 @@ function closeModal() {
 
 // Initialize form submission
 function initializeFormHandler() {
-    document.getElementById("addCustomerForm").addEventListener("submit", async function (e) {
-        e.preventDefault();
+    document
+        .getElementById("addCustomerForm")
+        .addEventListener("submit", async function (e) {
+            e.preventDefault();
 
-        const formData = new FormData(this);
+            const formData = new FormData(this);
 
-        try {
-            const response = await fetch(baseUrl() + "/CustomersManagement/create", {
-                method: "POST",
-                headers: {
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                    "Accept": "application/json"
-                },
-                body: formData,
-            });
+            try {
+                const response = await fetch(
+                    baseUrl() + "/CustomersManagement/create",
+                    {
+                        method: "POST",
+                        headers: {
+                            "X-CSRF-TOKEN": document.querySelector(
+                                'meta[name="csrf-token"]'
+                            ).content,
+                            Accept: "application/json",
+                        },
+                        body: formData,
+                    }
+                );
 
-            const data = await response.json();
+                const data = await response.json();
 
-            if (response.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success',
-                    text: data.message || 'Customer added successfully.'
-                });
+                if (response.ok) {
+                    Swal.fire({
+                        icon: "success",
+                        title: "Success",
+                        text: data.message || "Customer added successfully.",
+                    });
 
-                this.reset();
-                closeModal();
-                
-                // Refresh the table after adding a customer
-                if (customerTable) {
-                    customerTable.ajax.reload(null, false);
+                    this.reset();
+                    closeModal();
+
+                    // Refresh the table after adding a customer
+                    if (customerTable) {
+                        customerTable.ajax.reload(null, false);
+                    }
+                } else {
+                    Swal.fire({
+                        icon: "error",
+                        title: "Oops...",
+                        text: data.message || "Failed to add Customer.",
+                    });
                 }
-            } else {
+            } catch (error) {
+                console.error("Fetch Error:", error);
                 Swal.fire({
                     icon: "error",
-                    title: "Oops...",
-                    text: data.message || "Failed to add Customer.",
+                    title: "Unexpected Error",
+                    text: "Something went wrong. Please try again.",
                 });
             }
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            Swal.fire({
-                icon: "error",
-                title: "Unexpected Error",
-                text: "Something went wrong. Please try again.",
-            });
-        }
-    });
+        });
 }
-
 
 // Initialize customer table and form handlers
 function initializeCustomerTable(filter = "") {
     currentFilter = filter;
 
     // Destroy existing DataTable if it exists
-    if ($.fn.DataTable.isDataTable('#customerTable')) {
-        $('#customerTable').DataTable().destroy();
+    if ($.fn.DataTable.isDataTable("#customerTable")) {
+        $("#customerTable").DataTable().destroy();
     }
 
-    customerTable = $('#customerTable').DataTable({
+    customerTable = $("#customerTable").DataTable({
         ajax: {
             url: baseUrl() + "/CustomersManagement/DataTables",
-            data: function(d) {
+            data: function (d) {
                 d.filter = filter;
-            }
+            },
         },
         processing: true,
         serverSide: true,
@@ -90,37 +96,37 @@ function initializeCustomerTable(filter = "") {
                 data: "customer_id",
                 name: "customer_id",
                 title: "ID",
-                width: "50px"
+                width: "50px",
             },
             {
                 data: "first_name",
                 name: "first_name",
-                title: "First Name"
+                title: "First Name",
             },
             {
                 data: "last_name",
                 name: "last_name",
-                title: "Last Name"
+                title: "Last Name",
             },
             {
                 data: "email",
                 name: "email",
-                title: "Email"
+                title: "Email",
             },
             {
                 data: "phonenumber",
                 name: "phonenumber",
-                title: "Phone Number"
+                title: "Phone Number",
             },
             {
                 data: "active",
                 name: "active",
                 title: "Status",
-                render: function(data) {
+                render: function (data) {
                     return data == 1
                         ? '<span class="px-2 py-1 bg-green-500 text-white rounded-full text-sm">Active</span>'
                         : '<span class="px-2 py-1 bg-red-500 text-white rounded-full text-sm">Inactive</span>';
-                }
+                },
             },
             {
                 data: "action",
@@ -128,80 +134,40 @@ function initializeCustomerTable(filter = "") {
                 title: "Actions",
                 orderable: false,
                 searchable: false,
-                width: "100px"
-            }
+                width: "100px",
+            },
         ],
         order: [[0, "desc"]],
-        drawCallback: function() {
+        drawCallback: function () {
             document.getElementById("filter").value = currentFilter;
-        }
+        },
     });
-
-    // Add custom styling
-    $('head').append(`
-        <style>
-            .dataTables_wrapper .dataTables_length {
-                margin-bottom: 15px;
-            }
-            .dataTables_wrapper .dataTables_filter {
-                margin-bottom: 15px;
-            }
-            #customerTable {
-                width: 100% !important;
-            }
-            #customerTable th, #customerTable td {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            #customerTable .btn {
-                padding: 0.25rem 0.5rem;
-                margin: 0 2px;
-            }
-            .dataTables_scrollBody {
-                min-height: 400px;
-            }
-            .spinner-border {
-                display: inline-block;
-                width: 2rem;
-                height: 2rem;
-                vertical-align: text-bottom;
-                border: 0.25em solid currentColor;
-                border-right-color: transparent;
-                border-radius: 50%;
-                animation: spinner-border .75s linear infinite;
-            }
-            @keyframes spinner-border {
-                to { transform: rotate(360deg); }
-            }
-        </style>
-    `);
 
     // Initialize form submission handler
     initializeFormHandler();
 }
 
 // Handle filter change
-document.getElementById("filter").addEventListener("change", function() {
+document.getElementById("filter").addEventListener("change", function () {
     initializeCustomerTable(this.value);
 });
 
 // Handle delete customer
-$(document).on('click', '.delete-customer', function() {
-    const customerId = $(this).attr('data-id');
+$(document).on("click", ".delete-customer", function () {
+    const customerId = $(this).attr("data-id");
     if (!customerId) {
         console.error("Customer ID not found");
         return;
     }
 
     Swal.fire({
-        title: 'Are you sure?',
+        title: "Are you sure?",
         text: "This customer will be deactivated!",
-        icon: 'warning',
+        icon: "warning",
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, deactivate it!'
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, deactivate it!",
     }).then((result) => {
         if (result.isConfirmed) {
             updateCustomerStatus(customerId);
@@ -212,19 +178,24 @@ $(document).on('click', '.delete-customer', function() {
 // Function to update customer status
 async function updateCustomerStatus(customerId) {
     try {
-        const response = await fetch(`${baseUrl()}/CustomersManagement/updateStatus/${customerId}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+        const response = await fetch(
+            `${baseUrl()}/CustomersManagement/updateStatus/${customerId}`,
+            {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
             }
-        });
+        );
 
         const data = await response.json();
 
         if (data.success) {
-            Swal.fire('Deactivated!', data.message, 'success');
+            Swal.fire("Deactivated!", data.message, "success");
             if (customerTable) {
                 customerTable.ajax.reload(null, false);
             }
@@ -232,11 +203,11 @@ async function updateCustomerStatus(customerId) {
             throw new Error(data.message);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
         Swal.fire(
-            'Error!',
-            error.message || 'Failed to update customer status',
-            'error'
+            "Error!",
+            error.message || "Failed to update customer status",
+            "error"
         );
     }
 }
@@ -253,90 +224,97 @@ function closeEditModal() {
     modal.classList.remove("flex");
 }
 
-$(document).on('click', '.edit-customer', function() {
-    const customerId = $(this).attr('data-id');
+$(document).on("click", ".edit-customer", function () {
+    const customerId = $(this).attr("data-id");
     if (!customerId) {
         console.error("Customer ID not found");
         return;
     }
 
-    const row = customerTable.row($(this).closest('tr')).data();
-    
+    const row = customerTable.row($(this).closest("tr")).data();
+
     // Populate the edit form
-    document.getElementById('edit_customer_id').value = customerId;
-    document.getElementById('edit_first_name').value = row.first_name;
-    document.getElementById('edit_last_name').value = row.last_name;
-    document.getElementById('edit_email').value = row.email;
-    document.getElementById('edit_phonenumber').value = row.phonenumber;
-    
+    document.getElementById("edit_customer_id").value = customerId;
+    document.getElementById("edit_first_name").value = row.first_name;
+    document.getElementById("edit_last_name").value = row.last_name;
+    document.getElementById("edit_email").value = row.email;
+    document.getElementById("edit_phonenumber").value = row.phonenumber;
+
     // Open the edit modal
     openEditModal();
 });
 
-document.getElementById("editCustomerForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
+document
+    .getElementById("editCustomerForm")
+    .addEventListener("submit", async function (e) {
+        e.preventDefault();
 
-    const formData = new FormData(this);
-    const customerId = formData.get('customer_id');
+        const formData = new FormData(this);
+        const customerId = formData.get("customer_id");
 
-    try {
-        const response = await fetch(baseUrl() + `/CustomersManagement/update/${customerId}`, {
-            method: "POST",
-            headers: {
-                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content,
-                Accept: "application/json",
-            },
-            body: formData,
-        });
+        try {
+            const response = await fetch(
+                baseUrl() + `/CustomersManagement/update/${customerId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        "X-CSRF-TOKEN": document.querySelector(
+                            'meta[name="csrf-token"]'
+                        ).content,
+                        Accept: "application/json",
+                    },
+                    body: formData,
+                }
+            );
 
-        const data = await response.json();
+            const data = await response.json();
 
-        if (response.ok) {
-            Swal.fire({
-                icon: 'success',
-                title: 'Success',
-                text: data.message || 'Customer updated successfully.'
-            });
+            if (response.ok) {
+                Swal.fire({
+                    icon: "success",
+                    title: "Success",
+                    text: data.message || "Customer updated successfully.",
+                });
 
-            closeEditModal();
-            
+                closeEditModal();
+
                 // Refresh the table after updating a customer
-            if (customerTable) {
-                customerTable.ajax.reload(null, false);
+                if (customerTable) {
+                    customerTable.ajax.reload(null, false);
+                }
+            } else {
+                Swal.fire({
+                    icon: "error",
+                    title: "Oops...",
+                    text: data.message || "Failed to update Customer.",
+                });
             }
-        } else {
+        } catch (error) {
+            console.error("Fetch Error:", error);
             Swal.fire({
                 icon: "error",
-                title: "Oops...",
-                text: data.message || "Failed to update Customer.",
+                title: "Unexpected Error",
+                text: "Something went wrong. Please try again.",
             });
         }
-    } catch (error) {
-        console.error("Fetch Error:", error);
-        Swal.fire({
-            icon: "error",
-            title: "Unexpected Error",
-            text: "Something went wrong. Please try again.",
-        });
-    }
-});
+    });
 
 // Add restore functionality
-$(document).on('click', '.restore-customer', function() {
-    const customerId = $(this).attr('data-id');
+$(document).on("click", ".restore-customer", function () {
+    const customerId = $(this).attr("data-id");
     if (!customerId) {
         console.error("Customer ID not found");
         return;
     }
 
     Swal.fire({
-        title: 'Restore Customer?',
+        title: "Restore Customer?",
         text: "This will reactivate the customer!",
-        icon: 'question',
+        icon: "question",
         showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, restore it!'
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes, restore it!",
     }).then((result) => {
         if (result.isConfirmed) {
             restoreCustomerStatus(customerId);
@@ -347,19 +325,24 @@ $(document).on('click', '.restore-customer', function() {
 // Function to restore customer status
 async function restoreCustomerStatus(customerId) {
     try {
-        const response = await fetch(`${baseUrl()}/CustomersManagement/restore/${customerId}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+        const response = await fetch(
+            `${baseUrl()}/CustomersManagement/restore/${customerId}`,
+            {
+                method: "POST",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector(
+                        'meta[name="csrf-token"]'
+                    ).content,
+                    Accept: "application/json",
+                    "Content-Type": "application/json",
+                },
             }
-        });
+        );
 
         const data = await response.json();
 
         if (data.success) {
-            Swal.fire('Restored!', data.message, 'success');
+            Swal.fire("Restored!", data.message, "success");
             if (customerTable) {
                 customerTable.ajax.reload(null, false);
             }
@@ -367,11 +350,11 @@ async function restoreCustomerStatus(customerId) {
             throw new Error(data.message);
         }
     } catch (error) {
-        console.error('Error:', error);
+        console.error("Error:", error);
         Swal.fire(
-            'Error!',
-            error.message || 'Failed to restore customer',
-            'error'
+            "Error!",
+            error.message || "Failed to restore customer",
+            "error"
         );
     }
 }

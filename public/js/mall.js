@@ -1,6 +1,7 @@
 let mallTable;
 let currentFilter = "";
 
+//views
 function initializeMallTable(filter = "") {
     currentFilter = filter;
 
@@ -277,19 +278,6 @@ document
         }
     });
 
-// Modal Functions
-function openModal() {
-    const modal = document.getElementById("addMallModal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-}
-
-function closeModal() {
-    const modal = document.getElementById("addMallModal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-}
-
 function openEditModal() {
     const modal = document.getElementById("editMallModal");
     modal.classList.remove("hidden");
@@ -302,7 +290,20 @@ function closeEditModal() {
     modal.classList.remove("flex");
 }
 
-// Initialize form submissions
+//addd
+function openModal() {
+    const modal = document.getElementById("addMallModal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+function closeModal() {
+    const modal = document.getElementById("addMallModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
+
+// add and edit
 document.addEventListener("DOMContentLoaded", function () {
     // Add Mall Form
     document

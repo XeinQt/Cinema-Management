@@ -291,17 +291,7 @@ function openModal() {
     populateDropdowns();
 }
 
-function closeModal() {
-    const modal = document.getElementById("addCinemaModal");
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
-}
 
-function openEditModal() {
-    const modal = document.getElementById("editCinemaModal");
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
-}
 
 function closeEditModal() {
     const modal = document.getElementById("editCinemaModal");
@@ -309,7 +299,7 @@ function closeEditModal() {
     modal.classList.remove("flex");
 }
 
-// Function to populate mall and manager dropdowns
+// Function to populate mall and manager dropdowns for add
 async function populateDropdowns() {
     try {
         // Fetch malls
@@ -419,6 +409,20 @@ async function populateEditDropdowns() {
             text: "Failed to load dropdown data",
         });
     }
+}
+
+//add
+
+function closeModal() {
+    const modal = document.getElementById("addCinemaModal");
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+}
+
+function openEditModal() {
+    const modal = document.getElementById("editCinemaModal");
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
 }
 
 // Initialize form submission
